@@ -24,6 +24,9 @@
 | 2026-10-28 | `make` not installed on Windows dev machine | `tasks.py` is the task runner; `Makefile` is a thin wrapper over it | User |
 | 2026-10-28 | Git workflow | One branch per task (`p{phase}-t{n}-<slug>`); Claude creates the branch, user commits and merges. Base branch is `main`; remote `origin` = github.com/KeerthanaCL/AgentTrace | User |
 | 2026-10-28 | `phases.md` vs `PROGRESS.md` | `phases.md` serves as `PROGRESS.md`; `docs/lessons.md` points to `findings.md` | Claude |
+| 2026-10-29 | P0-T2 schema additions beyond §4.2 | Approved: `parent_span_id`, `kind="agent"`, `prompt_version` (Span/AnomalyScore/Diagnosis), `Run.replay_of/seed/created_at`, `Diagnosis.diagnosis_id/escalation_reason/narrative`, `ReplayResult.diagnosis_id/patch`; new `RootCause`, `PropagatedError`, `Patch` (3 kinds), `Fix`, `ExplainabilityScore` | User |
+| 2026-10-29 | Where injected faults live | `faults` sit with `ground_truth` in `schemas/ground_truth.py` (not in `ScenarioInput`): the fault list names the root node, so it is ground truth | Claude |
+| 2026-10-29 | `Diagnosis.judge_agreement` range | [-1, 1], since Cohen's/Fleiss' κ can be negative (spec implied 0–1) | Claude |
 | | Team size / submission format | | |
 | 2026-10-28 | Non-Meta models | Include NVIDIA + OSS as judges and agents under test, so results hold up beyond Meta's own models (still check the rules) | User |
 | | Muse Spark model ID + limits | | |

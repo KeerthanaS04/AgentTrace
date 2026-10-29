@@ -82,7 +82,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
 
 - [x] **P0-T1: Repo scaffold.** Layout per §4.1, `pyproject.toml`, `Makefile` (`setup test lint serve eval`), `.env.example`, `pre-commit`, `PROGRESS.md`.
   - *Done when:* `make setup && make test` is green on an empty suite.
-- [ ] **P0-T2: Schemas.** `Ref`, `Span`, `Explanation`, `NodeContract`, `Run`, `AnomalyScore`, `Diagnosis` (+ `RootCause`, `PropagatedError`, `Fix`), `ReplayResult`, `Scenario` in `agenttrace/schemas/`.
+- [x] **P0-T2: Schemas.** `Ref`, `Span`, `Explanation`, `NodeContract`, `Run`, `AnomalyScore`, `Diagnosis` (+ `RootCause`, `PropagatedError`, `Fix`), `ReplayResult`, `Scenario` in `agenttrace/schemas/`.
   - *Done when:* every schema round-trips through JSON; invalid data is rejected.
 - [ ] **P0-T3: Model gateway.** Provider adapters (Meta, NVIDIA NIM, generic OpenAI-compatible), role lookup, content-hash cache, retry/backoff, token + cost accounting, Pydantic structured-output with retry.
   - *Done when:* `gateway.complete(role="judge_fast", ...)` works per provider; repeat call is a logged `cache_hit`; cost recorded.
