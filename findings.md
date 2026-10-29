@@ -27,6 +27,8 @@
 | 2026-10-29 | P0-T2 schema additions beyond §4.2 | Approved: `parent_span_id`, `kind="agent"`, `prompt_version` (Span/AnomalyScore/Diagnosis), `Run.replay_of/seed/created_at`, `Diagnosis.diagnosis_id/escalation_reason/narrative`, `ReplayResult.diagnosis_id/patch`; new `RootCause`, `PropagatedError`, `Patch` (3 kinds), `Fix`, `ExplainabilityScore` | User |
 | 2026-10-29 | Where injected faults live | `faults` sit with `ground_truth` in `schemas/ground_truth.py` (not in `ScenarioInput`): the fault list names the root node, so it is ground truth | Claude |
 | 2026-10-29 | `Diagnosis.judge_agreement` range | [-1, 1], since Cohen's/Fleiss' κ can be negative (spec implied 0–1) | Claude |
+| 2026-10-29 | Gateway HTTP client | `httpx` directly (one OpenAI-compatible adapter for Meta / NIM / OpenRouter / vLLM), not the `openai` SDK, so caching, retries, and cost stay in our code | Claude (user didn't object) |
+| 2026-10-29 | Gateway cache key | Keyed by provider + model + messages + params + json_mode, **not** role, so roles that share a model share cached results | Claude |
 | | Team size / submission format | | |
 | 2026-10-28 | Non-Meta models | Include NVIDIA + OSS as judges and agents under test, so results hold up beyond Meta's own models (still check the rules) | User |
 | | Muse Spark model ID + limits | | |
