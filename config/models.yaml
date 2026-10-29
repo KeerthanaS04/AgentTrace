@@ -1,0 +1,99 @@
+# Model roles -> provider, model ID, params, and pricing.
+#
+# Rules (CLAUDE_meta.md section 2):
+#   - Model IDs live ONLY in this file. Swap a role's model by editing it here.
+#   - Anything not confirmed from a provider dashboard is TODO_VERIFY. The gateway
+#     refuses to call a TODO_VERIFY model or endpoint.
+#   - Pricing is USD per million tokens. A model with no pricing entry is still
+#     callable, but its cost is logged as unknown (0).
+#   - Judges and agents run at temperature 0 so cached replays are reproducible.
+
+providers:
+  meta:
+    # Meta Model API. OpenAI-compatible Chat Completions. Auth: Bearer MODEL_API_KEY.
+    base_url: https://api.meta.ai/v1
+    api_key_env: MODEL_API_KEY
+    supports_json_mode: false   # TODO_VERIFY: turn on if the API accepts response_format
+    timeout_s: 120
+    max_retries: 4
+    models:
+      muse-wonder-1.0:
+        # Spec says "roughly" $4 / $20. TODO_VERIFY exact pricing on the dashboard.
+        input_per_m: 4.00
+        output_per_m: 20.00
+      # Add the Muse Spark entry here once its ID and pricing are confirmed, e.g.
+      # <spark-id>: {input_per_m: ..., output_per_m: ...}
+
+  nvidia:
+    # NVIDIA hosted NIM (build.nvidia.com). OpenAI-compatible. Auth: Bearer NVIDIA_API_KEY.
+    # Endpoint taken from NVIDIA's public API docs; confirm it on your build.nvidia.com key page.
+    base_url: https://integrate.api.nvidia.com/v1
+    api_key_env: NVIDIA_API_KEY
+    supports_json_mode: false
+    timeout_s: 120
+    max_retries: 4
+    models: {}   # add pricing per model once chosen (free-tier credits may be 0)
+
+  openrouter:
+    # OpenRouter (open-source judges / agents under test). OpenAI-compatible.
+    # Endpoint taken from OpenRouter's public API docs.
+    base_url: https://openrouter.ai/api/v1
+    api_key_env: OPENROUTER_API_KEY
+    supports_json_mode: false
+    timeout_s: 120
+    max_retries: 4
+    models: {}   # add pricing per model once chosen (see the model's OpenRouter page)
+
+  local:
+    # Local vLLM or any OpenAI-compatible server. LOCAL_OPENAI_BASE_URL overrides base_url.
+    # vLLM accepts any non-empty key unless started with --api-key.
+    base_url: http://localhost:8000/v1
+    base_url_env: LOCAL_OPENAI_BASE_URL
+    api_key_env: LOCAL_OPENAI_API_KEY
+    supports_json_mode: false
+    timeout_s: 300
+    max_retries: 2
+    models: {}   # local inference: leave unpriced or price at 0
+
+roles:
+  # --- Judges -------------------------------------------------------------
+  judge_fast:
+    # Muse Spark: per-node anomaly scoring, claim checks, first-pass diagnosis.
+    provider: meta
+    model: TODO_VERIFY        # exact Muse Spark ID from the Model API dashboard
+    params: {temperature: 0, max_tokens: 1024}
+
+  judge_deep:
+    # Muse Wonder: escalated investigation only (see config/escalation.yaml, Phase 6).
+    provider: meta
+    model: muse-wonder-1.0
+    params: {temperature: 0, max_tokens: 4096}
+
+  judge_nvidia:
+    # Independent open-weight judge (Nemotron family).
+    provider: nvidia
+    model: TODO_VERIFY        # exact Nemotron model name from build.nvidia.com
+    params: {temperature: 0, max_tokens: 1024}
+
+  judge_oss:
+    # Independent open-source judge, also used for high-volume continuous scoring.
+    provider: openrouter
+    model: TODO_VERIFY        # e.g. a Llama / Qwen / Mistral instruct model
+    params: {temperature: 0, max_tokens: 1024}
+
+  # --- Agents under test ---------------------------------------------------
+  # Non-Meta by default so Meta credits go to diagnosis (see phases.md budget plan).
+  agent_default:
+    provider: openrouter
+    model: TODO_VERIFY
+    params: {temperature: 0, max_tokens: 1024}
+
+  agent_alt_1:
+    provider: nvidia
+    model: TODO_VERIFY
+    params: {temperature: 0, max_tokens: 1024}
+
+  agent_alt_2:
+    provider: openrouter
+    model: TODO_VERIFY        # a different model family from agent_default
+    params: {temperature: 0, max_tokens: 1024}

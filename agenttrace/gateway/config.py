@@ -14,6 +14,17 @@ from agenttrace.schemas.base import NonEmptyStr, NonNegativeFloat, StrictModel
 TODO_VERIFY = "TODO_VERIFY"
 DEFAULT_CONFIG_PATH = Path("config/models.yaml")
 
+# Roles every AgentTrace config must define (CLAUDE_meta.md section 7).
+REQUIRED_ROLES = (
+    "judge_fast",
+    "judge_deep",
+    "judge_nvidia",
+    "judge_oss",
+    "agent_default",
+    "agent_alt_1",
+    "agent_alt_2",
+)
+
 
 class ModelPricing(StrictModel):
     """USD per million tokens."""
@@ -24,6 +35,8 @@ class ModelPricing(StrictModel):
 
 class ProviderConfig(StrictModel):
     base_url: NonEmptyStr
+    # If set and present in the environment, overrides `base_url` (e.g. a local vLLM host).
+    base_url_env: str | None = None
     api_key_env: NonEmptyStr
     # Whether the endpoint accepts `response_format={"type": "json_object"}`.
     supports_json_mode: bool = False
@@ -51,6 +64,9 @@ class GatewayConfig(StrictModel):
 
     def pricing_for(self, provider: str, model: str) -> ModelPricing | None:
         return self.providers[provider].models.get(model)
+
+    def missing_roles(self) -> list[str]:
+        return [r for r in REQUIRED_ROLES if r not in self.roles]
 
 
 def load_config(path: Path | str = DEFAULT_CONFIG_PATH) -> GatewayConfig:
