@@ -55,6 +55,16 @@
 ## 2. Model and Provider Findings
 <!-- Verified model IDs, API quirks, rate limits, pricing, non-determinism at temp 0, structured-output reliability -->
 
+### 2026-10-29 · P0-T4 · Still unverified in `config/models.yaml`
+- **What happened:** the first config was written without dashboard access.
+- **Why it matters:** the gateway refuses `TODO_VERIFY` roles, so only `judge_deep` (Muse Wonder) is callable until these are filled in.
+- **Action:** open. Confirm each of these:
+  - Model IDs for `judge_fast` (Muse Spark), `judge_nvidia`, `judge_oss`, `agent_default`, `agent_alt_1`, `agent_alt_2`
+  - Exact Muse Wonder pricing (spec says "roughly $4/$20")
+  - Whether the Meta API accepts `response_format` JSON mode (`supports_json_mode` is false until then)
+  - NVIDIA and OpenRouter base URLs, taken from public docs
+  - Pricing for any NVIDIA / OpenRouter models chosen
+
 ---
 
 ## 3. Parse Failures and Structured-Output Issues

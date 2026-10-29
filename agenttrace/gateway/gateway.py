@@ -103,6 +103,12 @@ class Gateway:
     def _provider(self, name: str) -> OpenAICompatibleProvider:
         if name not in self._providers:
             pc = self.config.providers[name]
+            if pc.base_url_env and self._env.get(pc.base_url_env):
+                pc = pc.model_copy(update={"base_url": self._env[pc.base_url_env]})
+            if pc.base_url == TODO_VERIFY:
+                raise UnverifiedModelError(
+                    f"{name}: base_url is {TODO_VERIFY}; confirm the endpoint from provider docs"
+                )
             api_key = self._env.get(pc.api_key_env, "")
             if not api_key:
                 raise ProviderUnavailableError(
