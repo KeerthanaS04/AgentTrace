@@ -1,0 +1,49 @@
+# Brightcart knowledge base: general support information.
+
+- doc_id: KB-GEN-001
+  title: Support Hours and Channels
+  topic: general
+  effective_date: 2025-01-01
+  body: |
+    Live chat and phone support are available 8 AM to 8 PM Eastern, Monday through Saturday.
+    Email tickets are answered within 1 business day. Brightcart Plus members get a priority
+    phone line.
+  facts:
+    - {name: support_hours, value: "8 AM to 8 PM Eastern, Mon-Sat", text: "8 AM to 8 PM Eastern, Monday through Saturday"}
+    - {name: email_response_time, value: "1 business day", text: "within 1 business day"}
+
+- doc_id: KB-GEN-002
+  title: Returning a Gift
+  topic: general
+  effective_date: 2025-01-01
+  body: |
+    A gift recipient can return a gift using the gift receipt or order number. The refund is
+    issued to the recipient as store credit, and the buyer is not notified. Normal return
+    windows apply, counted from the delivery date.
+  facts:
+    - {name: gift_refund_type, value: "store credit", text: "issued to the recipient as store credit"}
+    - {name: buyer_notified, value: false, text: "the buyer is not notified"}
+
+- doc_id: KB-GEN-003
+  title: Writing Customer Replies
+  topic: general
+  effective_date: 2025-01-01
+  body: |
+    Every customer reply must state the decision clearly (approved, denied, or escalated),
+    give the reason with the policy that applies, and say what happens next and when. If a
+    refund is approved, include the refund amount and the expected processing time.
+  facts:
+    - {name: reply_must_include_decision, value: true, text: "state the decision clearly"}
+    - {name: reply_refund_details, value: "amount and processing time", text: "include the refund amount and the expected processing time"}
+
+- doc_id: KB-GEN-004
+  title: Order Lookup and Identity Checks
+  topic: general
+  effective_date: 2025-01-01
+  body: |
+    Before sharing order details, confirm the customer's identity by matching the email on
+    the ticket to the email on the order. Never share full card numbers; only the last 4
+    digits may be shown.
+  facts:
+    - {name: identity_check, value: "ticket email matches order email", text: "matching the email on the ticket to the email on the order"}
+    - {name: card_digits_shown, value: 4, text: "only the last 4 digits may be shown"}

@@ -1,0 +1,63 @@
+# Brightcart knowledge base: escalation rules for support agents.
+
+- doc_id: KB-ESC-001
+  title: When to Escalate a Ticket
+  topic: escalation
+  effective_date: 2025-03-01
+  body: |
+    Escalate instead of resolving directly when: the refund amount is over $200.00 (see
+    KB-REF-005), the account is under fraud review, the customer mentions legal action, a
+    chargeback has been filed, or the customer has contacted support 3 or more times about
+    the same issue without a resolution.
+  facts:
+    - {name: escalate_refund_over_usd, value: 200.00, text: "the refund amount is over $200.00"}
+    - {name: repeat_contact_threshold, value: 3, text: "3 or more times about the same issue"}
+    - {name: escalate_legal, value: true, text: "the customer mentions legal action"}
+
+- doc_id: KB-ESC-002
+  title: Chargebacks and Payment Disputes
+  topic: escalation
+  effective_date: 2025-01-01
+  body: |
+    If the customer has filed a chargeback or payment dispute with their bank, do not issue a
+    refund, because the customer could be refunded twice. Escalate the ticket to the Payments
+    team, who respond to the bank within 7 business days.
+  facts:
+    - {name: refund_with_chargeback, value: false, text: "do not issue a refund"}
+    - {name: chargeback_team, value: "Payments team", text: "Escalate the ticket to the Payments team"}
+    - {name: payments_response_days, value: 7, text: "within 7 business days"}
+
+- doc_id: KB-ESC-003
+  title: Refund Abuse Indicators
+  topic: escalation
+  effective_date: 2025-01-01
+  body: |
+    If a customer has received more than 3 refunds in the last 90 days, do not approve
+    another refund directly; escalate to Trust & Safety for review. This applies even if
+    the new refund amount is under the agent approval limit.
+  facts:
+    - {name: refund_abuse_count, value: 3, text: "more than 3 refunds in the last 90 days"}
+    - {name: abuse_team, value: "Trust & Safety", text: "escalate to Trust & Safety for review"}
+
+- doc_id: KB-ESC-004
+  title: Escalation Response Times
+  topic: escalation
+  effective_date: 2025-01-01
+  body: |
+    Supervisors respond to escalated tickets within 24 hours. Finance Review responds within
+    2 business days. When escalating, tell the customer which team will follow up and when.
+  facts:
+    - {name: supervisor_response_hours, value: 24, text: "within 24 hours"}
+    - {name: finance_response_days, value: 2, text: "within 2 business days"}
+
+- doc_id: KB-ESC-005
+  title: Escalation Limits (2024 version)
+  topic: escalation
+  status: superseded
+  superseded_by: KB-ESC-001
+  effective_date: 2024-01-01
+  body: |
+    Superseded by KB-ESC-001 on March 1, 2025. Agents could approve refunds of up to $500.00
+    before escalating to a supervisor.
+  facts:
+    - {name: escalate_refund_over_usd, value: 500.00, text: "up to $500.00"}

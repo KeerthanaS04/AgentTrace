@@ -1,0 +1,111 @@
+# Brightcart knowledge base: accounts, membership, and payments.
+
+- doc_id: KB-ACC-001
+  title: Resetting a Password
+  topic: account
+  effective_date: 2025-01-01
+  body: |
+    Customers can reset their password from the sign-in page. The reset link is sent to the
+    account email and expires after 30 minutes. Support agents cannot see or set passwords.
+  facts:
+    - {name: reset_link_expiry, value: "30 minutes", text: "expires after 30 minutes"}
+    - {name: agents_can_set_password, value: false, text: "Support agents cannot see or set passwords"}
+
+- doc_id: KB-ACC-002
+  title: Locked Accounts
+  topic: account
+  effective_date: 2025-01-01
+  body: |
+    After 5 failed sign-in attempts, an account is locked for 15 minutes and then unlocks
+    automatically. Support can unlock it sooner only after verifying the customer's identity
+    with a one-time code sent to the phone number on file.
+  facts:
+    - {name: failed_attempts_to_lock, value: 5, text: "After 5 failed sign-in attempts"}
+    - {name: lock_duration_minutes, value: 15, text: "locked for 15 minutes"}
+    - {name: manual_unlock_requires, value: "identity verification", text: "only after verifying the customer's identity"}
+
+- doc_id: KB-ACC-003
+  title: Accounts Under Fraud Review
+  topic: account
+  effective_date: 2025-01-01
+  body: |
+    Accounts flagged for fraud review are suspended. Support agents cannot reinstate a
+    suspended account and must not issue refunds or store credit to it while the review is
+    open. Escalate the ticket to Trust & Safety, who complete reviews within 5 business days.
+  facts:
+    - {name: agents_can_reinstate, value: false, text: "Support agents cannot reinstate a suspended account"}
+    - {name: refunds_during_review, value: false, text: "must not issue refunds or store credit"}
+    - {name: review_team, value: "Trust & Safety", text: "Escalate the ticket to Trust & Safety"}
+    - {name: review_duration_days, value: 5, text: "within 5 business days"}
+
+- doc_id: KB-ACC-004
+  title: Brightcart Plus Membership
+  topic: account
+  effective_date: 2025-01-01
+  body: |
+    Brightcart Plus costs $79.00 per year and includes free Express shipping and extended
+    return windows (see KB-REF-011). A membership can be cancelled for a full refund within
+    14 days of joining if no Plus benefits have been used. After 14 days, cancelling stops
+    the next renewal but no refund is given.
+  facts:
+    - {name: plus_price_usd, value: 79.00, text: "$79.00 per year"}
+    - {name: plus_refund_window_days, value: 14, text: "within 14 days of joining if no Plus benefits have been used"}
+    - {name: plus_refund_after_window, value: false, text: "no refund is given"}
+
+- doc_id: KB-ACC-005
+  title: Changing the Account Email
+  topic: account
+  effective_date: 2025-01-01
+  body: |
+    To change the account email, the customer must enter a verification code sent to the
+    current email address. The code is valid for 10 minutes. If the customer no longer has
+    access to the current email, escalate to Trust & Safety for manual verification.
+  facts:
+    - {name: email_code_validity, value: "10 minutes", text: "valid for 10 minutes"}
+
+- doc_id: KB-ACC-006
+  title: Deleting an Account
+  topic: account
+  effective_date: 2025-01-01
+  body: |
+    When a customer requests account deletion, the account is deactivated immediately and
+    permanently deleted after a 30-day grace period. Signing in during the grace period
+    cancels the deletion. Unused store credit is lost when the account is deleted.
+  facts:
+    - {name: deletion_grace_days, value: 30, text: "30-day grace period"}
+    - {name: store_credit_on_deletion, value: "lost", text: "Unused store credit is lost"}
+
+- doc_id: KB-ACC-007
+  title: Store Credit
+  topic: account
+  effective_date: 2025-01-01
+  body: |
+    Store credit can be used on any Brightcart purchase except gift cards. Store credit
+    expires 12 months after it is issued and cannot be converted to cash.
+  facts:
+    - {name: store_credit_expiry, value: "12 months", text: "expires 12 months after it is issued"}
+    - {name: store_credit_cash, value: false, text: "cannot be converted to cash"}
+
+- doc_id: KB-ACC-008
+  title: Payment Methods and Failed Payments
+  topic: account
+  effective_date: 2025-01-01
+  body: |
+    Brightcart accepts major credit and debit cards, PayPal, and store credit. Up to 5 cards
+    can be saved on an account. If a payment fails, the order is held for 48 hours so the
+    customer can update the payment method before it is cancelled.
+  facts:
+    - {name: max_saved_cards, value: 5, text: "Up to 5 cards"}
+    - {name: failed_payment_hold_hours, value: 48, text: "held for 48 hours"}
+
+- doc_id: KB-ACC-009
+  title: Promo Codes
+  topic: account
+  effective_date: 2025-01-01
+  body: |
+    Only one promo code can be used per order. A promo code that was not applied at checkout
+    can be added within 24 hours of placing the order by contacting support. Promo codes
+    cannot be applied to gift cards.
+  facts:
+    - {name: promo_codes_per_order, value: 1, text: "Only one promo code can be used per order"}
+    - {name: retroactive_promo_window, value: "24 hours", text: "within 24 hours of placing the order"}

@@ -29,6 +29,8 @@
 | 2026-10-29 | `Diagnosis.judge_agreement` range | [-1, 1], since Cohen's/Fleiss' κ can be negative (spec implied 0–1) | Claude |
 | 2026-10-29 | Gateway HTTP client | `httpx` directly (one OpenAI-compatible adapter for Meta / NIM / OpenRouter / vLLM), not the `openai` SDK, so caching, retries, and cost stay in our code | Claude (user didn't object) |
 | 2026-10-29 | Gateway cache key | Keyed by provider + model + messages + params + json_mode, **not** role, so roles that share a model share cached results | Claude |
+| 2026-10-31 | KB format and domain | Fictional retailer "Brightcart". 47 docs in `data/kb/<topic>.yaml` (one YAML per topic, not one file per doc), 108 checkable facts. 4 superseded docs + confusable windows (30 / 15 / 60 / 14 days) give F1 faults a detectable effect | Claude |
+| 2026-10-31 | Fact matching | Fact text is matched whitespace-insensitively (`normalize_ws`), since bodies wrap across lines; the P1-T7 checker should use the same normalization | Claude |
 | | Team size / submission format | | |
 | 2026-10-28 | Non-Meta models | Include NVIDIA + OSS as judges and agents under test, so results hold up beyond Meta's own models (still check the rules) | User |
 | 2026-10-31 | Muse Spark model ID | `muse-spark-1.3` ($1.25 / $4.25 per M), confirmed via `GET /v1/models` + dashboard. Wonder confirmed at $4 / $20. Rate limits not yet known | User + Claude |

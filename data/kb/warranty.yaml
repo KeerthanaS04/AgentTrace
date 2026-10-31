@@ -1,0 +1,76 @@
+# Brightcart knowledge base: warranty and protection plans.
+
+- doc_id: KB-WAR-001
+  title: Standard Warranty
+  topic: warranty
+  effective_date: 2025-01-01
+  body: |
+    Electronics sold by Brightcart include a 1-year warranty against manufacturing defects,
+    starting on the delivery date. All other products include a 90-day warranty against
+    manufacturing defects. The warranty covers repair or replacement, not a cash refund.
+  facts:
+    - {name: electronics_warranty, value: "1 year", text: "1-year warranty"}
+    - {name: other_warranty_days, value: 90, text: "90-day warranty"}
+    - {name: warranty_remedy, value: "repair or replacement", text: "covers repair or replacement, not a cash refund"}
+
+- doc_id: KB-WAR-002
+  title: Brightcart Protect Extended Plans
+  topic: warranty
+  effective_date: 2025-01-01
+  body: |
+    Brightcart Protect extends coverage to 2 or 3 years from delivery and adds accidental
+    damage protection (drops and spills), limited to one accidental-damage claim per 12
+    months. Protect must be purchased within 30 days of the product's delivery.
+  facts:
+    - {name: protect_terms, value: "2 or 3 years", text: "2 or 3 years from delivery"}
+    - {name: accidental_claim_limit, value: "one per 12 months", text: "one accidental-damage claim per 12 months"}
+    - {name: protect_purchase_window_days, value: 30, text: "within 30 days of the product's delivery"}
+
+- doc_id: KB-WAR-003
+  title: Warranty Exclusions
+  topic: warranty
+  effective_date: 2025-01-01
+  body: |
+    The standard warranty does not cover water damage, physical damage from drops,
+    normal wear such as battery capacity loss, cosmetic scratches, or any device that has
+    been opened or repaired by someone other than an authorized service center. Accidental
+    damage is covered only under Brightcart Protect.
+  facts:
+    - {name: water_damage_covered, value: false, text: "does not cover water damage"}
+    - {name: unauthorized_repair_voids, value: true, text: "opened or repaired by someone other than an authorized service center"}
+
+- doc_id: KB-WAR-004
+  title: Filing a Warranty Claim
+  topic: warranty
+  effective_date: 2025-01-01
+  body: |
+    To file a warranty claim the customer needs the order number and the product's serial
+    number. Brightcart emails a prepaid shipping label. Repairs are completed within 10-15
+    business days of the device arriving at the service center.
+  facts:
+    - {name: claim_requirements, value: "order number and serial number", text: "the order number and the product's serial number"}
+    - {name: repair_turnaround, value: "10-15 business days", text: "10-15 business days"}
+
+- doc_id: KB-WAR-005
+  title: Warranty Refunds When Repair Is Not Possible
+  topic: warranty
+  effective_date: 2025-01-01
+  body: |
+    If a product under warranty cannot be repaired and no replacement model is available,
+    Brightcart issues a refund of the original purchase price as store credit. A cash refund
+    to the original payment method is offered only within the first 90 days after delivery.
+  facts:
+    - {name: unrepairable_refund_type, value: "store credit", text: "refund of the original purchase price as store credit"}
+    - {name: cash_refund_window_days, value: 90, text: "within the first 90 days after delivery"}
+
+- doc_id: KB-WAR-006
+  title: Standard Warranty (2023 version)
+  topic: warranty
+  status: superseded
+  superseded_by: KB-WAR-001
+  effective_date: 2023-01-01
+  body: |
+    Superseded by KB-WAR-001 on January 1, 2025. Electronics included a 2-year warranty and
+    other products a 1-year warranty, both repair-only.
+  facts:
+    - {name: electronics_warranty, value: "2 years", text: "2-year warranty"}

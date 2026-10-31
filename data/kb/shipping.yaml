@@ -1,0 +1,127 @@
+# Brightcart knowledge base: shipping and delivery.
+
+- doc_id: KB-SHP-001
+  title: Standard Shipping
+  topic: shipping
+  effective_date: 2025-01-01
+  body: |
+    Standard shipping within the United States takes 3-5 business days after the order
+    ships. Standard shipping is free on orders of $35.00 or more; otherwise it costs $5.99.
+    Orders usually ship within 1 business day.
+  facts:
+    - {name: standard_delivery_days, value: "3-5 business days", text: "3-5 business days"}
+    - {name: free_shipping_threshold_usd, value: 35.00, text: "free on orders of $35.00 or more"}
+    - {name: standard_shipping_fee_usd, value: 5.99, text: "costs $5.99"}
+
+- doc_id: KB-SHP-002
+  title: Express Shipping
+  topic: shipping
+  effective_date: 2025-01-01
+  body: |
+    Express shipping delivers in 1-2 business days and costs $14.99 per order. Orders placed
+    before 2 PM Eastern on a business day ship the same day. Express shipping is not
+    available to PO boxes.
+  facts:
+    - {name: express_delivery_days, value: "1-2 business days", text: "1-2 business days"}
+    - {name: express_fee_usd, value: 14.99, text: "costs $14.99 per order"}
+    - {name: express_cutoff, value: "2 PM Eastern", text: "before 2 PM Eastern"}
+
+- doc_id: KB-SHP-003
+  title: International Shipping
+  topic: shipping
+  effective_date: 2025-01-01
+  body: |
+    Brightcart ships to 38 countries. International delivery takes 7-14 business days.
+    Customs duties and import taxes are paid by the customer on delivery and are not
+    refundable. Products containing lithium batteries cannot be shipped internationally.
+  facts:
+    - {name: international_delivery_days, value: "7-14 business days", text: "7-14 business days"}
+    - {name: duties_paid_by, value: "customer", text: "paid by the customer on delivery"}
+    - {name: batteries_international, value: false, text: "lithium batteries cannot be shipped internationally"}
+
+- doc_id: KB-SHP-004
+  title: Package Marked Delivered but Not Received
+  topic: shipping
+  effective_date: 2025-01-01
+  body: |
+    If tracking shows a package as delivered but the customer has not received it, ask the
+    customer to wait 48 hours, since carriers sometimes mark packages early. After 48 hours,
+    open a carrier claim. The carrier investigation takes up to 10 business days, after which
+    Brightcart sends a free replacement or a full refund.
+  facts:
+    - {name: wait_before_claim_hours, value: 48, text: "wait 48 hours"}
+    - {name: carrier_investigation_days, value: 10, text: "up to 10 business days"}
+    - {name: lost_package_remedy, value: "free replacement or full refund", text: "a free replacement or a full refund"}
+
+- doc_id: KB-SHP-005
+  title: Late Express Delivery
+  topic: shipping
+  effective_date: 2025-01-01
+  body: |
+    If an Express order arrives later than its promised delivery date, the $14.99 Express
+    fee is refunded automatically within 3 business days. Late Standard shipments are not
+    eligible for a shipping refund.
+  facts:
+    - {name: late_express_refund, value: "Express fee refunded", text: "the $14.99 Express fee is refunded automatically"}
+    - {name: late_express_refund_days, value: 3, text: "within 3 business days"}
+    - {name: late_standard_refund, value: false, text: "Late Standard shipments are not eligible for a shipping refund"}
+
+- doc_id: KB-SHP-006
+  title: Changing a Shipping Address
+  topic: shipping
+  effective_date: 2025-01-01
+  body: |
+    A shipping address can be changed within 1 hour of placing the order, from the order
+    page or by contacting support. After that, or once the order has shipped, the address
+    cannot be changed; the customer may refuse delivery or return the item instead.
+  facts:
+    - {name: address_change_window, value: "1 hour", text: "within 1 hour of placing the order"}
+
+- doc_id: KB-SHP-007
+  title: Cancelling an Order
+  topic: shipping
+  effective_date: 2025-01-01
+  body: |
+    An order can be cancelled for a full refund any time before it ships. Once an order has
+    shipped it cannot be cancelled and must be returned under the normal return policy
+    after delivery.
+  facts:
+    - {name: cancel_before_ship, value: "full refund", text: "cancelled for a full refund any time before it ships"}
+    - {name: cancel_after_ship, value: false, text: "Once an order has shipped it cannot be cancelled"}
+
+- doc_id: KB-SHP-008
+  title: Orders Not Yet Shipped
+  topic: shipping
+  effective_date: 2025-01-01
+  body: |
+    If an in-stock order has not shipped within 5 business days of being placed, the customer
+    may cancel it for a full refund, or keep it and receive a $10.00 store credit for the
+    delay.
+  facts:
+    - {name: ship_delay_threshold_days, value: 5, text: "within 5 business days of being placed"}
+    - {name: ship_delay_credit_usd, value: 10.00, text: "a $10.00 store credit"}
+
+- doc_id: KB-SHP-009
+  title: Free Shipping Threshold (2024 version)
+  topic: shipping
+  status: superseded
+  superseded_by: KB-SHP-001
+  effective_date: 2024-01-01
+  body: |
+    Superseded by KB-SHP-001 on January 1, 2025. Standard shipping was free on orders of
+    $50.00 or more and took 5-7 business days.
+  facts:
+    - {name: free_shipping_threshold_usd, value: 50.00, text: "free on orders of $50.00 or more"}
+    - {name: standard_delivery_days, value: "5-7 business days", text: "5-7 business days"}
+
+- doc_id: KB-SHP-010
+  title: Split Shipments and Backorders
+  topic: shipping
+  effective_date: 2025-01-01
+  body: |
+    Orders with items from different warehouses may arrive in separate packages, each with
+    its own tracking number. Shipping is charged once per order. Backordered items ship when
+    they are back in stock, and the customer is not charged for them until they ship.
+  facts:
+    - {name: shipping_charged, value: "once per order", text: "Shipping is charged once per order"}
+    - {name: backorder_charge_timing, value: "when shipped", text: "not charged for them until they ship"}
