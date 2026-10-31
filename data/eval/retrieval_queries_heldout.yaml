@@ -1,0 +1,24 @@
+# Held-out retrieval queries. Written BEFORE the query-expansion table was added and
+# never used to tune it, to check that retrieval fixes generalize beyond the dev set
+# in retrieval_queries.yaml. Report both numbers; don't edit these to raise recall.
+
+- query: The mug I ordered arrived shattered, what can you do?
+  relevant: [KB-REF-004]
+- query: Can I send back my tablet? I got it 10 days ago and opened it
+  relevant: [KB-REF-002]
+- query: My parcel never showed up even though it says delivered
+  relevant: [KB-SHP-004]
+- query: Is there a fee if I return something from a $20 order?
+  relevant: [KB-REF-009]
+- query: Can somebody authorize a $700 refund for my order?
+  relevant: [KB-REF-005]
+- query: I can't sign in, it says my account has been suspended
+  relevant: [KB-ACC-003]
+- query: I'd like to close my account permanently
+  relevant: [KB-ACC-006]
+- query: Is the clearance jacket I bought refundable?
+  relevant: [KB-REF-003]
+- query: My earbuds broke after 3 months, is that covered?
+  relevant: [KB-WAR-001]
+- query: How do I use two coupon codes on one order?
+  relevant: [KB-ACC-009]

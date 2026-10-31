@@ -100,7 +100,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
 
 - [x] **P1-T1: Knowledge base.** 30–50 policy/FAQ docs in `data/kb/` with IDs and checkable facts (dates, amounts, windows).
   - *Done when:* each doc has ID, title, body, and ≥1 checkable fact.
-- [ ] **P1-T2: Retrieval index.** Vector or BM25 index; `search(query, k)` → doc IDs + scores.
+- [x] **P1-T2: Retrieval index.** Vector or BM25 index; `search(query, k)` → doc IDs + scores.
   - *Done when:* top-3 recall ≥ 0.9 on 20 hand-written queries.
 - [ ] **P1-T3: Mock tools.** `order_lookup`, `refund_api`, `account_status` on a JSON fixture DB; strict response schemas.
   - *Done when:* each tool has typed I/O and unit tests.

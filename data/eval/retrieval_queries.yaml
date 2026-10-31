@@ -1,0 +1,57 @@
+# Hand-written retrieval eval set for P1-T2 (target: top-3 recall >= 0.9).
+#
+# Queries are phrased the way customers write tickets, deliberately NOT copying KB
+# titles. `relevant` lists the active doc(s) a correct answer needs; with two docs,
+# each counts half toward recall@3.
+#
+# Do not tune these queries to make retrieval pass. If recall drops, fix the
+# retriever, or log the miss in findings.md.
+
+- query: I bought a sweater three weeks ago and want to send it back. Is that still OK?
+  relevant: [KB-REF-001]
+- query: How long do I have to return headphones I opened?
+  relevant: [KB-REF-002]
+- query: My blender showed up cracked in the box
+  relevant: [KB-REF-004]
+- query: Can I get my money back for a gift card I never used?
+  relevant: [KB-REF-003]
+- query: When will the refund show up on my credit card?
+  relevant: [KB-REF-007]
+- query: I'm a Plus member, how many days do I get to return things?
+  relevant: [KB-REF-011]
+- query: Do I have to pay for the return label?
+  relevant: [KB-REF-009]
+- query: Tracking says my package was delivered but nothing is at my door
+  relevant: [KB-SHP-004]
+- query: How fast is express shipping and what does it cost?
+  relevant: [KB-SHP-002]
+- query: I typed the wrong street address on my order, can I fix it?
+  relevant: [KB-SHP-006]
+- query: Please cancel my order, it hasn't shipped yet
+  relevant: [KB-SHP-007]
+- query: It has been a week and my order still has not shipped
+  relevant: [KB-SHP-008]
+- query: Do you deliver to Canada, and who pays the customs fees?
+  relevant: [KB-SHP-003]
+- query: My laptop stopped working after 8 months. Is it still under warranty?
+  relevant: [KB-WAR-001]
+- query: I dropped my phone in the pool. Will the warranty cover it?
+  relevant: [KB-WAR-003]
+- query: The password reset link in my email says it has expired
+  relevant: [KB-ACC-001]
+- query: I'm locked out after entering the wrong password too many times
+  relevant: [KB-ACC-002]
+- query: I want to cancel my Plus membership and get my money back
+  relevant: [KB-ACC-004]
+- query: I already disputed the charge with my bank, can you also refund me?
+  relevant: [KB-ESC-002]
+- query: The price went down two days after I bought it. Can I get the difference?
+  relevant: [KB-REF-013]
+- query: I need a refund of $450 for a TV, who can approve that?
+  relevant: [KB-REF-005, KB-ESC-001]
+- query: Does my store credit ever expire?
+  relevant: [KB-ACC-007]
+- query: Someone gave me a present I don't want. How do I return it?
+  relevant: [KB-GEN-002]
+- query: What hours can I call customer support?
+  relevant: [KB-GEN-001]
