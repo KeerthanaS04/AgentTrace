@@ -31,7 +31,8 @@
 | 2026-10-29 | Gateway cache key | Keyed by provider + model + messages + params + json_mode, **not** role, so roles that share a model share cached results | Claude |
 | | Team size / submission format | | |
 | 2026-10-28 | Non-Meta models | Include NVIDIA + OSS as judges and agents under test, so results hold up beyond Meta's own models (still check the rules) | User |
-| | Muse Spark model ID + limits | | |
+| 2026-10-31 | Muse Spark model ID | `muse-spark-1.3` ($1.25 / $4.25 per M), confirmed via `GET /v1/models` + dashboard. Wonder confirmed at $4 / $20. Rate limits not yet known | User + Claude |
+| | Spark Contributor tier? | **Open, user's call.** `muse-spark-1.3-contributor` is the same model at $0.10 / $0.20 (~12–20× cheaper) but data is used to train Meta models, it is rate-limited, and only in select countries. Our data is synthetic, so the privacy cost is low. Priced in `models.yaml`; switching is a one-line edit | User |
 | | NVIDIA / OSS models + hosting | | |
 | 2026-10-28 | Meta budget | $150 Model API credits; hard cap $140, warn at $100 | User |
 | | NVIDIA / OSS budget | | |
@@ -52,8 +53,47 @@
 
 ---
 
+### 2026-10-30 · P0-T5 · Budget guard limits to remember
+- **What happened:** the guard checks a worst-case estimate before each call (prompt chars / 3 + full `max_tokens` output) and records actual cost after.
+- **Why it matters:**
+  1. The per-run scope is a `ContextVar`, which does **not** carry into `ThreadPoolExecutor` worker threads automatically. When judging is parallelized (P6-T4), submit work with `contextvars.copy_context().run`, or spend won't count toward the run.
+  2. Check and record are separate steps, so concurrent calls can overshoot a cap by up to (workers × one call's worst case).
+  3. Unpriced models estimate $0, so the guard can't stop them. Price every model that costs money.
+- **Action:** revisit 1–2 in P6-T4. 3 is handled by `test_verified_meta_models_are_priced` for Meta.
+
+---
+
 ## 2. Model and Provider Findings
 <!-- Verified model IDs, API quirks, rate limits, pricing, non-determinism at temp 0, structured-output reliability -->
+
+### 2026-10-31 · P0-T5 · Muse models spend hidden reasoning tokens inside `max_tokens`
+- **What happened:** with `max_tokens=8` (and again with 300), Spark returned `content: null`, `finish_reason: length`. 298 of 300 tokens were `reasoning_tokens`. A one-word reply cost ~480 reasoning tokens at default effort.
+- **Why it matters:**
+  - A judge with too small a `max_tokens` returns nothing but is still billed.
+  - Default reasoning would make Spark judging about 5× more expensive than needed.
+  - Reasoning tokens are billed as output and included in `completion_tokens`, so our cost math is already correct.
+- **Measured (one-word reply):**
+
+  | Model | Default | `low` | `minimal` |
+  |---|---|---|---|
+  | Spark 1.3 | ~480 | ~90 | ~10 |
+  | Wonder 1.0 | ~60 | ~50 | ~14 |
+
+  Accepted values are `minimal, low, medium, high, xhigh, max` (`none` is rejected).
+- **Action:**
+  - `judge_fast` set to `reasoning_effort: low`, `max_tokens: 4096`; `judge_deep` set to `max_tokens: 8192`.
+  - Gateway now records `reasoning_tokens` and `finish_reason`, and warns on truncated empty replies.
+  - Smoke fails on empty replies instead of reporting them as `ok`.
+  - Revisit the effort level against judge accuracy in P6-T1.
+
+### 2026-10-31 · P0-T5 · Meta API supports JSON mode
+- **What happened:** `response_format: {"type": "json_object"}` was accepted and returned valid JSON.
+- **Action:** `supports_json_mode: true` for the meta provider.
+
+### 2026-10-31 · P0-T5 · Probe calls outside the ledger
+- **What happened:** the raw-API probes behind the two findings above were sent directly, not through the gateway, so they're missing from `.cache/calls.jsonl`.
+- **Why it matters:** actual Meta spend is about $0.02 higher than the ledger shows. Negligible, but the ledger is a slight undercount.
+- **Action:** future probes go through the gateway.
 
 ### 2026-10-29 · P0-T4 · Still unverified in `config/models.yaml`
 - **What happened:** the first config was written without dashboard access.

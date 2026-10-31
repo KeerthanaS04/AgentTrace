@@ -56,7 +56,7 @@ def eval_() -> int:
 
 
 def smoke() -> int:
-    return _not_yet("smoke", "P0-T5")
+    return _run("uv", "run", "python", "-m", "agenttrace.gateway.smoke")
 
 
 TASKS = {

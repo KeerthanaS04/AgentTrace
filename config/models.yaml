@@ -7,22 +7,39 @@
 #   - Pricing is USD per million tokens. A model with no pricing entry is still
 #     callable, but its cost is logged as unknown (0).
 #   - Judges and agents run at temperature 0 so cached replays are reproducible.
+#   - Per-provider `budget_usd` (hard stop) and `warn_usd` cap lifetime spend, read
+#     back from .cache/calls.jsonl. Global caps are MAX_USD_TOTAL / MAX_USD_PER_RUN in .env.
 
 providers:
   meta:
     # Meta Model API. OpenAI-compatible Chat Completions. Auth: Bearer MODEL_API_KEY.
     base_url: https://api.meta.ai/v1
     api_key_env: MODEL_API_KEY
-    supports_json_mode: false   # TODO_VERIFY: turn on if the API accepts response_format
+    supports_json_mode: true    # verified 2026-10-31: response_format json_object accepted
+    # Muse models reason before answering, and reasoning tokens count toward max_tokens.
+    # `reasoning_effort` accepts: minimal, low, medium, high, xhigh, max (not "none").
+    # Measured on a one-word reply: Spark default ~480 reasoning tokens, low ~90,
+    # minimal ~10. Wonder default ~60. Leave enough max_tokens for reasoning + answer.
     timeout_s: 120
     max_retries: 4
+    # $150 of Meta credits: hard stop at $140, warn at $100 (phases.md budget plan).
+    budget_usd: 140
+    warn_usd: 100
+    # IDs confirmed via GET /v1/models; pricing from the Model API dashboard (2026-10-31).
+    # Cached-input prices (Wonder $0.20, Spark $0.15) are not used yet: costs are
+    # computed at the full input price, which errs high.
     models:
       muse-wonder-1.0:
-        # Spec says "roughly" $4 / $20. TODO_VERIFY exact pricing on the dashboard.
         input_per_m: 4.00
         output_per_m: 20.00
-      # Add the Muse Spark entry here once its ID and pricing are confirmed, e.g.
-      # <spark-id>: {input_per_m: ..., output_per_m: ...}
+      muse-spark-1.3:
+        input_per_m: 1.25
+        output_per_m: 4.25
+      # Same model as 1.3 at ~95% less, but inputs/outputs are used to train Meta's
+      # models, it is rate-limited by tokens, and only in select countries.
+      muse-spark-1.3-contributor:
+        input_per_m: 0.10
+        output_per_m: 0.20
 
   nvidia:
     # NVIDIA hosted NIM (build.nvidia.com). OpenAI-compatible. Auth: Bearer NVIDIA_API_KEY.
@@ -60,14 +77,16 @@ roles:
   judge_fast:
     # Muse Spark: per-node anomaly scoring, claim checks, first-pass diagnosis.
     provider: meta
-    model: TODO_VERIFY        # exact Muse Spark ID from the Model API dashboard
-    params: {temperature: 0, max_tokens: 1024}
+    model: muse-spark-1.3
+    # High-volume role: keep reasoning low. Revisit after P6-T1 judge-quality checks.
+    params: {temperature: 0, max_tokens: 4096, reasoning_effort: low}
 
   judge_deep:
     # Muse Wonder: escalated investigation only (see config/escalation.yaml, Phase 6).
     provider: meta
     model: muse-wonder-1.0
-    params: {temperature: 0, max_tokens: 4096}
+    # Deep investigation: default reasoning effort, generous output budget.
+    params: {temperature: 0, max_tokens: 8192}
 
   judge_nvidia:
     # Independent open-weight judge (Nemotron family).
