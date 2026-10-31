@@ -3,12 +3,33 @@
 from __future__ import annotations
 
 import json
+import logging
 import threading
 from collections import defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
 
 from agenttrace.gateway.types import CompletionResult
+
+log = logging.getLogger(__name__)
+
+
+def read_spend(log_path: Path | str) -> dict[str, float]:
+    """Lifetime spend per provider from a ledger file (0 if the file doesn't exist)."""
+    spend: dict[str, float] = defaultdict(float)
+    path = Path(log_path)
+    if not path.exists():
+        return {}
+    with path.open(encoding="utf-8") as fh:
+        for lineno, line in enumerate(fh, 1):
+            if not line.strip():
+                continue
+            try:
+                entry = json.loads(line)
+                spend[entry["provider"]] += float(entry["cost_usd"])
+            except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+                log.warning("%s:%d: skipping unreadable ledger line", path, lineno)
+    return dict(spend)
 
 
 class CostLedger:

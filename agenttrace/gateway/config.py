@@ -42,6 +42,10 @@ class ProviderConfig(StrictModel):
     supports_json_mode: bool = False
     timeout_s: float = Field(default=60.0, gt=0)
     max_retries: int = Field(default=4, ge=0)
+    # Lifetime spend cap for this provider (USD), enforced by the budget guard.
+    budget_usd: NonNegativeFloat | None = None
+    # Log a warning once lifetime spend on this provider crosses this amount.
+    warn_usd: NonNegativeFloat | None = None
     models: dict[str, ModelPricing] = Field(default_factory=dict)
 
 

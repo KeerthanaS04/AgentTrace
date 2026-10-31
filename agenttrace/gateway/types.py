@@ -24,6 +24,9 @@ class CompletionResult(StrictModel):
     params: dict[str, Any] = Field(default_factory=dict)
     tokens_in: NonNegativeInt = 0
     tokens_out: NonNegativeInt = 0
+    # Hidden reasoning tokens, already included in tokens_out.
+    reasoning_tokens: NonNegativeInt = 0
+    finish_reason: str | None = None
     # Cost of this call. 0 on a cache hit (see `original_cost_usd`).
     cost_usd: NonNegativeFloat = 0.0
     original_cost_usd: NonNegativeFloat = 0.0
@@ -31,6 +34,11 @@ class CompletionResult(StrictModel):
     cache_hit: bool = False
     latency_s: NonNegativeFloat = 0.0
     cache_key: str = ""
+
+    @property
+    def truncated(self) -> bool:
+        """The reply hit max_tokens (possibly before any visible text, if reasoning used it up)."""
+        return self.finish_reason == "length"
 
 
 class StructuredResult(BaseModel, Generic[ModelT]):

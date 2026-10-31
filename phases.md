@@ -84,13 +84,14 @@ Phases are numbered by component, **not** by build order. Build in this order:
   - *Done when:* `make setup && make test` is green on an empty suite.
 - [x] **P0-T2: Schemas.** `Ref`, `Span`, `Explanation`, `NodeContract`, `Run`, `AnomalyScore`, `Diagnosis` (+ `RootCause`, `PropagatedError`, `Fix`), `ReplayResult`, `Scenario` in `agenttrace/schemas/`.
   - *Done when:* every schema round-trips through JSON; invalid data is rejected.
-- [ ] **P0-T3: Model gateway.** Provider adapters (Meta, NVIDIA NIM, generic OpenAI-compatible), role lookup, content-hash cache, retry/backoff, token + cost accounting, Pydantic structured-output with retry.
+- [x] **P0-T3: Model gateway.** Provider adapters (Meta, NVIDIA NIM, generic OpenAI-compatible), role lookup, content-hash cache, retry/backoff, token + cost accounting, Pydantic structured-output with retry.
   - *Done when:* `gateway.complete(role="judge_fast", ...)` works per provider; repeat call is a logged `cache_hit`; cost recorded.
-  - *Status:* code + mocked tests done (all providers, cache hit, cost, retries, structured repair). **Live check pending** real model IDs (P0-T4) and API keys in `.env` (verified by `smoke` in P0-T5).
+  - *Status:* verified live 2026-10-31 on Meta (Spark + Wonder): call, then `cache_hit` at $0, cost recorded. NVIDIA / OpenRouter covered by mocked tests; re-run `smoke` once their models are chosen.
 - [x] **P0-T4: Model config.** `config/models.yaml` with roles `judge_fast`, `judge_deep`, `judge_nvidia`, `judge_oss`, `agent_default`, `agent_alt_1`, `agent_alt_2`, plus pricing. Unknown IDs = `TODO_VERIFY`.
   - *Done when:* swapping a role's model needs a config edit only.
-- [ ] **P0-T5: Smoke tests + budget guard.** `make smoke` pings each model; `MAX_USD_PER_RUN` / `MAX_USD_TOTAL` abort over-budget runs.
+- [x] **P0-T5: Smoke tests + budget guard.** `make smoke` pings each model; `MAX_USD_PER_RUN` / `MAX_USD_TOTAL` abort over-budget runs.
   - *Done when:* smoke passes for available providers and skips unavailable ones gracefully.
+  - *Status:* verified 2026-10-31: `judge_fast` + `judge_deep` ok, 5 TODO_VERIFY roles skipped, exit 0. Budget guard: total / per-provider / per-run caps, lifetime spend from ledger, checked before sending.
 
 ---
 

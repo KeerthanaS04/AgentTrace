@@ -29,6 +29,9 @@ class RawCompletion:
     tokens_in: int
     tokens_out: int
     model: str
+    finish_reason: str | None = None
+    # Hidden reasoning tokens (already included in tokens_out).
+    reasoning_tokens: int = 0
 
 
 class OpenAICompatibleProvider:
@@ -68,15 +71,19 @@ class OpenAICompatibleProvider:
             body["response_format"] = {"type": "json_object"}
         data = self._post_with_retry("/chat/completions", body)
         try:
-            text = data["choices"][0]["message"]["content"] or ""
+            choice = data["choices"][0]
+            text = choice["message"]["content"] or ""
         except (KeyError, IndexError, TypeError) as exc:
             raise ProviderRequestError(f"{self.name}: malformed response: {data!r:.300}") from exc
         usage = data.get("usage") or {}
+        details = usage.get("completion_tokens_details") or {}
         return RawCompletion(
             text=text,
             tokens_in=int(usage.get("prompt_tokens") or 0),
             tokens_out=int(usage.get("completion_tokens") or 0),
             model=data.get("model") or model,
+            finish_reason=choice.get("finish_reason"),
+            reasoning_tokens=int(details.get("reasoning_tokens") or 0),
         )
 
     def _post_with_retry(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
