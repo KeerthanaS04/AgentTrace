@@ -65,6 +65,34 @@
 
 ---
 
+### 2026-10-31 · P1-T2 · Retrieval: vocabulary gap, and a held-out leak I caught
+- **What happened:**
+  - Plain BM25 got recall@3 = 0.875 on the 24-query dev set. All 3 misses were wording gaps: "cracked" vs "damaged/defective", "laptop" vs "electronics", "approve" vs "approval".
+  - I added a small query-expansion table: damage synonyms, product → "electronics", approval wording.
+  - I wrote 10 held-out queries to check generalization, but finished the table *after* writing them, and 3 entries (`authorize`, `coupon`, `earbuds`) came from held-out wording. That is leakage, and it inflated held-out recall to 0.900. I removed those entries.
+- **Final numbers:**
+
+  | Set | n | recall@1 | recall@3 | recall@5 |
+  |---|---|---|---|---|
+  | dev | 24 | 0.688 | **0.979** | 0.979 |
+  | held-out | 10 | 0.800 | **0.800** | 0.900 |
+
+- **Why it matters:**
+  - The dev number meets Done-when (≥ 0.9), but held-out 0.80 (n=10, wide CI) is the more honest estimate for raw ticket text.
+  - The two held-out misses are exactly the removed words, which confirms the leak.
+  - Keyword retrieval stays brittle to synonyms. In the real workflow the Retriever agent's LLM writes the query, which should use policy wording and narrow the gap. Measure that in P1-T5.
+- **Action:**
+  - The held-out set is now frozen (a test checks that dev and held-out don't overlap).
+  - Future expansion entries may only come from dev-set misses.
+  - Revisit if the P4-T4 scenario checks show clean-run retrieval failures.
+
+### 2026-10-31 · P1-T2 · BM25 implemented in-house
+- **What happened:** I wrote BM25 directly (Lucene-style IDF, k1 = 1.5, b = 0.75, titles weighted ×2) instead of using `rank-bm25`.
+- **Why it matters:** no numpy dependency, no negative-IDF quirk on a 47-doc corpus, and deterministic tie-breaking (score rounded to 1e-9, then doc_id), so rankings are reproducible across machines.
+- **Action:** none. Superseded docs are left out of the index by default; F1 faults inject them.
+
+---
+
 ## 2. Model and Provider Findings
 <!-- Verified model IDs, API quirks, rate limits, pricing, non-determinism at temp 0, structured-output reliability -->
 
