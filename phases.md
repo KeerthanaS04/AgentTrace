@@ -98,7 +98,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
 ## Phase 1: Demo Workflow (Customer Support)
 **Goal:** a realistic workflow to instrument and break. · **Milestone:** M1
 
-- [ ] **P1-T1: Knowledge base.** 30–50 policy/FAQ docs in `data/kb/` with IDs and checkable facts (dates, amounts, windows).
+- [x] **P1-T1: Knowledge base.** 30–50 policy/FAQ docs in `data/kb/` with IDs and checkable facts (dates, amounts, windows).
   - *Done when:* each doc has ID, title, body, and ≥1 checkable fact.
 - [ ] **P1-T2: Retrieval index.** Vector or BM25 index; `search(query, k)` → doc IDs + scores.
   - *Done when:* top-3 recall ≥ 0.9 on 20 hand-written queries.

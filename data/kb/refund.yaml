@@ -1,0 +1,170 @@
+# Brightcart knowledge base: refunds and returns.
+# Each fact's `text` must appear verbatim in its doc's body (checked by the loader).
+
+- doc_id: KB-REF-001
+  title: Standard Return and Refund Policy
+  topic: refund
+  effective_date: 2025-01-01
+  body: |
+    Most items bought from Brightcart can be returned within 30 days of delivery for a
+    full refund. The item must be unused and in its original packaging. Electronics follow
+    a shorter window (see KB-REF-002), and Brightcart Plus members get longer windows (see
+    KB-REF-011). Once the return is received and inspected, the refund goes back to the
+    original payment method.
+  facts:
+    - {name: return_window_days, value: 30, text: "30 days of delivery"}
+    - {name: condition_required, value: "unused, original packaging", text: "unused and in its original packaging"}
+    - {name: refund_destination, value: "original payment method", text: "original payment method"}
+
+- doc_id: KB-REF-002
+  title: Electronics Returns
+  topic: refund
+  effective_date: 2025-01-01
+  body: |
+    Electronics (phones, laptops, tablets, headphones, smart-home devices, and accessories)
+    can be returned within 15 days of delivery. Unopened electronics receive a full refund.
+    Opened electronics that are in working condition are refunded minus a 10% restocking fee.
+    Electronics that are defective on arrival are covered by KB-REF-004 instead, with no fee.
+  facts:
+    - {name: electronics_return_window_days, value: 15, text: "15 days of delivery"}
+    - {name: restocking_fee_percent, value: 10, text: "10% restocking fee"}
+    - {name: unopened_refund, value: "full refund", text: "Unopened electronics receive a full refund"}
+
+- doc_id: KB-REF-003
+  title: Final Sale Items and Gift Cards
+  topic: refund
+  effective_date: 2025-01-01
+  body: |
+    Items marked "Final Sale" on the product page, including clearance items, cannot be
+    returned or refunded unless they arrive damaged or defective. Gift cards and digital
+    downloads are non-refundable in all cases.
+  facts:
+    - {name: final_sale_refundable, value: false, text: "cannot be returned or refunded"}
+    - {name: gift_cards_refundable, value: false, text: "Gift cards and digital downloads are non-refundable"}
+
+- doc_id: KB-REF-004
+  title: Damaged or Defective on Arrival
+  topic: refund
+  effective_date: 2025-01-01
+  body: |
+    If an item arrives damaged or defective, the customer must report it within 7 days of
+    delivery and include at least one photo of the damage. The customer may choose a full
+    refund or a free replacement. Brightcart covers all return shipping for damaged or
+    defective items, and no restocking fee applies.
+  facts:
+    - {name: damage_report_window_days, value: 7, text: "within 7 days of delivery"}
+    - {name: photo_required, value: true, text: "at least one photo of the damage"}
+    - {name: remedy, value: "full refund or free replacement", text: "a full refund or a free replacement"}
+
+- doc_id: KB-REF-005
+  title: Refund Approval Limits
+  topic: refund
+  effective_date: 2025-03-01
+  body: |
+    Support agents may approve refunds of up to $200.00 per order without further review.
+    Refunds from $200.01 to $1,000.00 must be escalated to a support supervisor. Refunds
+    above $1,000.00 must be escalated to the Finance Review team. These limits apply to the
+    refund amount, not the original order total.
+  facts:
+    - {name: agent_approval_limit_usd, value: 200.00, text: "up to $200.00 per order"}
+    - {name: supervisor_range_usd, value: "200.01-1000.00", text: "Refunds from $200.01 to $1,000.00 must be escalated to a support supervisor"}
+    - {name: finance_review_threshold_usd, value: 1000.00, text: "above $1,000.00 must be escalated to the Finance Review team"}
+
+- doc_id: KB-REF-006
+  title: Partial Refunds for Incomplete Returns
+  topic: refund
+  effective_date: 2025-01-01
+  body: |
+    If a returned item is missing accessories, manuals, or parts that came in the box, the
+    refund is reduced by 20% of the item price. If the item shows signs of use beyond
+    inspection, the return may be refused and sent back to the customer.
+  facts:
+    - {name: missing_parts_deduction_percent, value: 20, text: "reduced by 20% of the item price"}
+
+- doc_id: KB-REF-007
+  title: Refund Processing Times
+  topic: refund
+  effective_date: 2025-01-01
+  body: |
+    After a return is approved, refunds to credit or debit cards take 5-7 business days to
+    appear. PayPal refunds take 3-5 business days. Refunds issued as Brightcart store credit
+    are available immediately.
+  facts:
+    - {name: card_refund_days, value: "5-7 business days", text: "5-7 business days"}
+    - {name: paypal_refund_days, value: "3-5 business days", text: "3-5 business days"}
+    - {name: store_credit_timing, value: "immediately", text: "available immediately"}
+
+- doc_id: KB-REF-008
+  title: Holiday Return Extension
+  topic: refund
+  effective_date: 2025-11-01
+  body: |
+    Items delivered between November 15 and December 31 can be returned until January 31
+    of the following year, even if the normal return window has ended. Electronics are
+    included. Final Sale items are still excluded.
+  facts:
+    - {name: holiday_delivery_period, value: "Nov 15 - Dec 31", text: "between November 15 and December 31"}
+    - {name: holiday_return_deadline, value: "January 31", text: "until January 31"}
+
+- doc_id: KB-REF-009
+  title: Return Shipping Costs
+  topic: refund
+  effective_date: 2025-01-01
+  body: |
+    Returns of orders over $50.00 include a free prepaid return label. For orders of $50.00
+    or less, a return shipping fee of $6.95 is deducted from the refund. Return shipping is
+    always free for damaged or defective items.
+  facts:
+    - {name: free_return_label_threshold_usd, value: 50.00, text: "orders over $50.00 include a free prepaid return label"}
+    - {name: return_shipping_fee_usd, value: 6.95, text: "return shipping fee of $6.95"}
+
+- doc_id: KB-REF-010
+  title: Return Policy (2023 version)
+  topic: refund
+  status: superseded
+  superseded_by: KB-REF-001
+  effective_date: 2023-01-01
+  body: |
+    Superseded by KB-REF-001 on January 1, 2025. Items could be returned within 14 days of
+    delivery for a full refund. Opened items were not accepted. Refunds were issued as store
+    credit only.
+  facts:
+    - {name: return_window_days, value: 14, text: "14 days of delivery"}
+    - {name: refund_destination, value: "store credit", text: "store credit only"}
+
+- doc_id: KB-REF-011
+  title: Brightcart Plus Extended Returns
+  topic: refund
+  effective_date: 2025-01-01
+  body: |
+    Brightcart Plus members can return most items within 60 days of delivery instead of 30.
+    For electronics, Plus members get 30 days instead of 15. Plus members never pay the
+    return shipping fee. Membership must be active on the date the return is requested.
+  facts:
+    - {name: plus_return_window_days, value: 60, text: "within 60 days of delivery"}
+    - {name: plus_electronics_window_days, value: 30, text: "Plus members get 30 days instead of 15"}
+    - {name: plus_free_return_shipping, value: true, text: "never pay the return shipping fee"}
+
+- doc_id: KB-REF-012
+  title: Returns Without an Order Number
+  topic: refund
+  effective_date: 2025-01-01
+  body: |
+    If the customer cannot provide an order number and the order cannot be found by email
+    or phone number, the return can only be refunded as store credit at the item's lowest
+    sale price in the last 90 days.
+  facts:
+    - {name: no_order_refund_type, value: "store credit", text: "refunded as store credit"}
+    - {name: lowest_price_lookback_days, value: 90, text: "lowest sale price in the last 90 days"}
+
+- doc_id: KB-REF-013
+  title: Price Adjustments
+  topic: refund
+  effective_date: 2025-01-01
+  body: |
+    If Brightcart lowers the price of an item within 7 days of purchase, the customer can
+    request a one-time price adjustment for the difference. Price adjustments are refunded to
+    the original payment method. Brightcart does not match competitor prices.
+  facts:
+    - {name: price_adjustment_window_days, value: 7, text: "within 7 days of purchase"}
+    - {name: competitor_price_match, value: false, text: "does not match competitor prices"}
