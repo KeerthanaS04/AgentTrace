@@ -1,0 +1,136 @@
+{
+  "as_of": "2026-01-20",
+  "customers": [
+    {"customer_id": "C001", "name": "Ana Ruiz", "email": "ana.ruiz@example.com"},
+    {"customer_id": "C002", "name": "Ben Okafor", "email": "ben.okafor@example.com", "plus_member": true, "plus_since": "2025-06-01"},
+    {"customer_id": "C003", "name": "Chloe Park", "email": "chloe.park@example.com"},
+    {"customer_id": "C004", "name": "Dev Malhotra", "email": "dev.malhotra@example.com", "account_status": "suspended"},
+    {"customer_id": "C005", "name": "Elin Varga", "email": "elin.varga@example.com", "account_status": "locked"},
+    {"customer_id": "C006", "name": "Farid Haddad", "email": "farid.haddad@example.com"},
+    {"customer_id": "C007", "name": "Grace Liu", "email": "grace.liu@example.com"},
+    {"customer_id": "C008", "name": "Hiro Tanaka", "email": "hiro.tanaka@example.com", "plus_member": true, "plus_since": "2024-11-10"}
+  ],
+  "orders": [
+    {
+      "order_id": "O1001", "customer_id": "C001", "email": "ana.ruiz@example.com",
+      "status": "delivered", "placed_at": "2025-12-29", "shipped_at": "2025-12-30", "delivered_at": "2026-01-02",
+      "payment_method": "card", "card_last4": "4417",
+      "items": [{"sku": "AP-SWT-01", "name": "Wool Sweater", "category": "apparel", "price": 48.00}]
+    },
+    {
+      "order_id": "O1002", "customer_id": "C001", "email": "ana.ruiz@example.com",
+      "status": "delivered", "placed_at": "2026-01-08", "shipped_at": "2026-01-09", "delivered_at": "2026-01-12",
+      "payment_method": "card", "card_last4": "4417",
+      "items": [{"sku": "EL-HP-220", "name": "Noise-Cancelling Headphones", "category": "electronics", "price": 129.00, "opened": true}]
+    },
+    {
+      "order_id": "O1003", "customer_id": "C002", "email": "ben.okafor@example.com",
+      "status": "delivered", "placed_at": "2025-12-30", "shipped_at": "2025-12-31", "delivered_at": "2026-01-03",
+      "payment_method": "card", "card_last4": "9021",
+      "items": [{"sku": "EL-LT-14", "name": "14-inch Laptop", "category": "electronics", "price": 899.00}]
+    },
+    {
+      "order_id": "O1004", "customer_id": "C003", "email": "chloe.park@example.com",
+      "status": "delivered", "placed_at": "2026-01-13", "shipped_at": "2026-01-14", "delivered_at": "2026-01-17",
+      "payment_method": "paypal",
+      "items": [{"sku": "HM-BL-500", "name": "Countertop Blender", "category": "home", "price": 79.00}]
+    },
+    {
+      "order_id": "O1005", "customer_id": "C003", "email": "chloe.park@example.com",
+      "status": "delivered", "placed_at": "2026-01-06", "shipped_at": "2026-01-07", "delivered_at": "2026-01-10",
+      "payment_method": "paypal",
+      "items": [{"sku": "AP-JKT-CL", "name": "Rain Jacket (Clearance)", "category": "apparel", "price": 35.00, "final_sale": true}]
+    },
+    {
+      "order_id": "O1006", "customer_id": "C004", "email": "dev.malhotra@example.com",
+      "status": "delivered", "placed_at": "2025-12-31", "shipped_at": "2026-01-02", "delivered_at": "2026-01-05",
+      "payment_method": "card", "card_last4": "3388",
+      "items": [{"sku": "EL-TB-10", "name": "10-inch Tablet", "category": "electronics", "price": 249.00}]
+    },
+    {
+      "order_id": "O1007", "customer_id": "C006", "email": "farid.haddad@example.com",
+      "status": "delivered", "placed_at": "2026-01-03", "shipped_at": "2026-01-05", "delivered_at": "2026-01-08",
+      "payment_method": "card", "card_last4": "7710",
+      "items": [{"sku": "AP-SHO-42", "name": "Running Shoes", "category": "apparel", "price": 60.00}]
+    },
+    {
+      "order_id": "O1008", "customer_id": "C007", "email": "grace.liu@example.com",
+      "status": "delivered", "placed_at": "2026-01-01", "shipped_at": "2026-01-02", "delivered_at": "2026-01-06",
+      "payment_method": "card", "card_last4": "5502", "chargeback_filed": true,
+      "items": [{"sku": "EL-TV-55", "name": "55-inch TV", "category": "electronics", "price": 450.00}]
+    },
+    {
+      "order_id": "O1009", "customer_id": "C008", "email": "hiro.tanaka@example.com",
+      "status": "delivered", "placed_at": "2025-11-20", "shipped_at": "2025-11-21", "delivered_at": "2025-11-25",
+      "payment_method": "card", "card_last4": "6634",
+      "items": [{"sku": "HM-RUG-58", "name": "5x8 Area Rug", "category": "home", "price": 140.00}]
+    },
+    {
+      "order_id": "O1010", "customer_id": "C001", "email": "ana.ruiz@example.com",
+      "status": "delivered", "placed_at": "2025-10-27", "shipped_at": "2025-10-28", "delivered_at": "2025-11-01",
+      "payment_method": "card", "card_last4": "4417",
+      "items": [{"sku": "HM-LMP-02", "name": "Desk Lamp", "category": "home", "price": 42.00}]
+    },
+    {
+      "order_id": "O1011", "customer_id": "C003", "email": "chloe.park@example.com",
+      "status": "processing", "placed_at": "2026-01-19",
+      "payment_method": "paypal",
+      "items": [{"sku": "HM-TWL-SET", "name": "Bath Towel Set", "category": "home", "price": 54.00}]
+    },
+    {
+      "order_id": "O1012", "customer_id": "C005", "email": "elin.varga@example.com",
+      "status": "shipped", "placed_at": "2026-01-15", "shipped_at": "2026-01-16",
+      "payment_method": "card", "card_last4": "1209",
+      "items": [{"sku": "AP-SCF-03", "name": "Cashmere Scarf", "category": "apparel", "price": 65.00}]
+    },
+    {
+      "order_id": "O1013", "customer_id": "C002", "email": "ben.okafor@example.com",
+      "status": "delivered", "placed_at": "2026-01-14", "shipped_at": "2026-01-14", "delivered_at": "2026-01-19",
+      "promised_delivery": "2026-01-16", "shipping_method": "express", "shipping_fee": 14.99,
+      "payment_method": "card", "card_last4": "9021",
+      "items": [{"sku": "HM-CFM-01", "name": "Coffee Maker", "category": "home", "price": 89.00}]
+    },
+    {
+      "order_id": "O1014", "customer_id": "C008", "email": "hiro.tanaka@example.com",
+      "status": "delivered", "placed_at": "2026-01-10", "shipped_at": "2026-01-10", "delivered_at": "2026-01-10",
+      "payment_method": "card", "card_last4": "6634",
+      "items": [{"sku": "GC-050", "name": "$50 Gift Card", "category": "gift_card", "price": 50.00}]
+    },
+    {
+      "order_id": "O1015", "customer_id": "C006", "email": "farid.haddad@example.com",
+      "status": "processing", "placed_at": "2026-01-08",
+      "payment_method": "card", "card_last4": "7710",
+      "items": [{"sku": "HM-PAN-SET", "name": "Nonstick Pan Set", "category": "home", "price": 110.00}]
+    },
+    {
+      "order_id": "O0901", "customer_id": "C006", "email": "farid.haddad@example.com",
+      "status": "delivered", "placed_at": "2025-10-25", "shipped_at": "2025-10-27", "delivered_at": "2025-10-30",
+      "shipping_fee": 5.99, "payment_method": "card", "card_last4": "7710",
+      "items": [{"sku": "AP-TEE-05", "name": "Graphic Tee", "category": "apparel", "price": 25.00}]
+    },
+    {
+      "order_id": "O0902", "customer_id": "C006", "email": "farid.haddad@example.com",
+      "status": "delivered", "placed_at": "2025-11-05", "shipped_at": "2025-11-06", "delivered_at": "2025-11-10",
+      "shipping_fee": 5.99, "payment_method": "card", "card_last4": "7710",
+      "items": [{"sku": "HM-MUG-04", "name": "Ceramic Mug Set", "category": "home", "price": 32.00}]
+    },
+    {
+      "order_id": "O0903", "customer_id": "C006", "email": "farid.haddad@example.com",
+      "status": "delivered", "placed_at": "2025-11-28", "shipped_at": "2025-12-01", "delivered_at": "2025-12-04",
+      "shipping_fee": 5.99, "payment_method": "card", "card_last4": "7710",
+      "items": [{"sku": "AP-HAT-02", "name": "Knit Beanie", "category": "apparel", "price": 18.00}]
+    },
+    {
+      "order_id": "O0904", "customer_id": "C006", "email": "farid.haddad@example.com",
+      "status": "delivered", "placed_at": "2025-12-10", "shipped_at": "2025-12-11", "delivered_at": "2025-12-15",
+      "payment_method": "card", "card_last4": "7710",
+      "items": [{"sku": "HM-CND-03", "name": "Candle Trio", "category": "home", "price": 40.00}]
+    }
+  ],
+  "refunds": [
+    {"refund_id": "RF-O0901-1", "order_id": "O0901", "amount": 25.00, "issued_at": "2025-11-08"},
+    {"refund_id": "RF-O0902-1", "order_id": "O0902", "amount": 32.00, "issued_at": "2025-11-20"},
+    {"refund_id": "RF-O0903-1", "order_id": "O0903", "amount": 18.00, "issued_at": "2025-12-12"},
+    {"refund_id": "RF-O0904-1", "order_id": "O0904", "amount": 40.00, "issued_at": "2026-01-05"}
+  ]
+}
