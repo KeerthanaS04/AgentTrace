@@ -1,6 +1,6 @@
 """Cross-platform task runner (stands in for `make` where it isn't installed).
 
-Usage: python tasks.py <setup|test|lint|format|serve|eval|smoke>
+Usage: python tasks.py <setup|test|lint|format|serve|eval|smoke|retrieval>
 """
 
 from __future__ import annotations
@@ -59,6 +59,10 @@ def smoke() -> int:
     return _run("uv", "run", "python", "-m", "agenttrace.gateway.smoke")
 
 
+def retrieval() -> int:
+    return _run("uv", "run", "python", "-m", "agenttrace.workflow.kb.report")
+
+
 TASKS = {
     "setup": setup,
     "test": test,
@@ -67,6 +71,7 @@ TASKS = {
     "serve": serve,
     "eval": eval_,
     "smoke": smoke,
+    "retrieval": retrieval,
 }
 
 

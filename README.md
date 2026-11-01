@@ -18,3 +18,13 @@ python tasks.py lint
 ```
 
 `make <target>` works the same where `make` is installed.
+
+## Seeing the numbers
+
+Tests only report pass/fail. These commands print the actual measurements:
+
+| Command | Shows |
+|---|---|
+| `python tasks.py smoke` | Each model role: ok / skipped / failed, latency, cost, and lifetime spend vs. budget caps (makes tiny live API calls) |
+| `python tasks.py retrieval` | Retrieval recall@1/3/5 on the dev and held-out query sets, every miss, and PASS/FAIL against the target |
+| `uv run pytest tests/<file>.py -v` | Each individual test by name, for one area |
