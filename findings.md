@@ -31,6 +31,8 @@
 | 2026-10-29 | Gateway cache key | Keyed by provider + model + messages + params + json_mode, **not** role, so roles that share a model share cached results | Claude |
 | 2026-10-31 | KB format and domain | Fictional retailer "Brightcart". 47 docs in `data/kb/<topic>.yaml` (one YAML per topic, not one file per doc), 108 checkable facts. 4 superseded docs + confusable windows (30 / 15 / 60 / 14 days) give F1 faults a detectable effect | Claude |
 | 2026-10-31 | Fact matching | Fact text is matched whitespace-insensitively (`normalize_ws`), since bodies wrap across lines; the P1-T7 checker should use the same normalization | Claude |
+| 2026-11-01 | Reproducible numbers | Every number reported must come from a repo command, not an ad-hoc script. Added `python tasks.py retrieval`; README lists the measurement commands | User request |
+| 2026-11-01 | Tool design | Tools compute day counts from the fixture DB's `as_of` date (never the real clock, never the LLM). `refund_api` has `quote` (check only) and `issue` modes; the Tool Agent uses `quote`, since it runs before the Policy Agent decides | Claude |
 | | Team size / submission format | | |
 | 2026-10-28 | Non-Meta models | Include NVIDIA + OSS as judges and agents under test, so results hold up beyond Meta's own models (still check the rules) | User |
 | 2026-10-31 | Muse Spark model ID | `muse-spark-1.3` ($1.25 / $4.25 per M), confirmed via `GET /v1/models` + dashboard. Wonder confirmed at $4 / $20. Rate limits not yet known | User + Claude |
