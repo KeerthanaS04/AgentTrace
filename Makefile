@@ -1,7 +1,7 @@
 # Thin wrapper over tasks.py so `make <target>` and `python tasks.py <target>` behave the same.
 PY ?= python
 
-.PHONY: setup test lint format serve eval smoke retrieval
+.PHONY: setup test lint format serve eval smoke retrieval toy
 
 setup:
 	$(PY) tasks.py setup
@@ -26,3 +26,6 @@ smoke:
 
 retrieval:
 	$(PY) tasks.py retrieval
+
+toy:
+	$(PY) tasks.py toy

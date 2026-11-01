@@ -104,7 +104,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
   - *Done when:* top-3 recall ≥ 0.9 on 20 hand-written queries.
 - [x] **P1-T3: Mock tools.** `order_lookup`, `refund_api`, `account_status` on a JSON fixture DB; strict response schemas.
   - *Done when:* each tool has typed I/O and unit tests.
-- [ ] **P1-T4: Agent runtime.** `workflow/runtime.py`; agents are `run(inputs, ctx) -> AgentOutput` (output + `Explanation`); workflow is a declared step graph.
+- [x] **P1-T4: Agent runtime.** `workflow/runtime.py`; agents are `run(inputs, ctx) -> AgentOutput` (output + `Explanation`); workflow is a declared step graph.
   - *Done when:* a toy 2-agent workflow runs end to end.
 - [ ] **P1-T5: The five agents.** Router → Retriever → Tool Agent → Policy Agent → Response Writer, each with a `NodeContract` in `workflow/contracts.py`.
   - *Done when:* ≥90% of 20 clean tickets reach the correct final decision.
