@@ -1,6 +1,6 @@
 """Cross-platform task runner (stands in for `make` where it isn't installed).
 
-Usage: python tasks.py <setup|test|lint|format|serve|eval|smoke|retrieval>
+Usage: python tasks.py <setup|test|lint|format|serve|eval|smoke|retrieval|toy>
 """
 
 from __future__ import annotations
@@ -63,6 +63,10 @@ def retrieval() -> int:
     return _run("uv", "run", "python", "-m", "agenttrace.workflow.kb.report")
 
 
+def toy() -> int:
+    return _run("uv", "run", "python", "-m", "agenttrace.workflow.toy")
+
+
 TASKS = {
     "setup": setup,
     "test": test,
@@ -72,6 +76,7 @@ TASKS = {
     "eval": eval_,
     "smoke": smoke,
     "retrieval": retrieval,
+    "toy": toy,
 }
 
 
