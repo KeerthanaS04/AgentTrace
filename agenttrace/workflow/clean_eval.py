@@ -4,14 +4,15 @@
     python tasks.py clean --profile bolt             # another model profile
     python tasks.py clean --profile default bolt -q  # compare profiles side by side
     python tasks.py clean --only clean-03 -v         # one ticket, with the full reasoning
+    python tasks.py clean --only clean-03 --trace    # one ticket's span tree (P2-T1)
 
 Which model each agent uses comes from config/agents.yaml (profile -> step -> role) and
 config/models.yaml (role -> model), never from code. Prints one row per ticket, then
 accuracy and PASS/FAIL against the 90% target; with several profiles, a comparison
 table. Decision accuracy is the P1-T5 target; "final" is the stricter P1-T7 outcome check
-(right decision AND the reply states every required fact). Full step records go to
-reports/clean_eval_<profile>.json. Repeat runs are served from the gateway cache, so they
-are free and identical.
+(right decision AND the reply states every required fact). Full step records and each
+ticket's traced `Run` go to reports/clean_eval_<profile>.json. Repeat runs are served
+from the gateway cache, so they are free and identical.
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ import yaml
 from agenttrace.evaluation.outcome import check_outcome
 from agenttrace.gateway.gateway import Gateway
 from agenttrace.schemas.ground_truth import Scenario
+from agenttrace.tracing.tree import format_tree
 from agenttrace.workflow.agent_config import DEFAULT_PROFILE, load_agents_config
 from agenttrace.workflow.contracts import run_checks
 from agenttrace.workflow.kb.index import BM25Index
@@ -93,6 +95,7 @@ def evaluate_profile(
     *,
     verbose: bool = False,
     quiet: bool = False,
+    trace: bool = False,
 ) -> dict[str, Any]:
     """Run every scenario on one profile; print rows unless quiet; return the summary."""
     if not quiet:
@@ -121,6 +124,9 @@ def evaluate_profile(
             )
             if verbose and (not ok or len(scenarios) == 1):
                 print(explain(result))
+        run = result.to_run(scenario_id=sc.scenario_id, final_correct=outcome.correct)
+        if trace:
+            print(format_tree(run) + "\n")
         rows.append(
             {
                 "scenario_id": sc.scenario_id,
@@ -134,7 +140,8 @@ def evaluate_profile(
                 "completed": result.status == "ok",
                 "seconds": round(secs, 2),
                 "violations": found,
-                "result": result.model_dump(mode="json"),
+                "result": result.model_dump(mode="json", exclude={"spans"}),
+                "run": run.model_dump(mode="json"),  # the full trace (P2-T1)
             }
         )
     n = len(rows)
@@ -207,6 +214,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--only", nargs="*", help="scenario ids to run")
     parser.add_argument("-v", "--verbose", action="store_true", help="print reasoning for misses")
     parser.add_argument("-q", "--quiet", action="store_true", help="skip per-ticket rows")
+    parser.add_argument("-t", "--trace", action="store_true", help="print each ticket's span tree")
     args = parser.parse_args(argv)
 
     scenarios = load_scenarios()
@@ -226,7 +234,13 @@ def main(argv: list[str] | None = None) -> int:
             print(f"    {step:<11} -> {role:<14} {rc.provider}: {rc.model}")
         print(f"Clean-ticket eval: {len(scenarios)} tickets\n")
         summary = evaluate_profile(
-            gateway, scenarios, name, roles, verbose=args.verbose, quiet=args.quiet
+            gateway,
+            scenarios,
+            name,
+            roles,
+            verbose=args.verbose,
+            quiet=args.quiet,
+            trace=args.trace,
         )
         print_summary(summary)
         summaries.append(summary)

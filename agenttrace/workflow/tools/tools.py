@@ -15,6 +15,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, ValidationError
 
 from agenttrace.schemas.base import NonEmptyStr, StrictModel
+from agenttrace.tracing import SpanBuilder, traced
 from agenttrace.workflow.tools.db import (
     AccountState,
     FixtureDB,
@@ -262,6 +263,10 @@ TOOLS: dict[str, ToolSpec] = {
 }
 
 
+def _record_tool(span: SpanBuilder, result: StrictModel) -> None:
+    span.output = result.model_dump(mode="json")
+
+
 class ToolBox:
     """Tools bound to one fixture database. Works on a private copy, so `issue` calls
     never leak into the source fixtures or into other runs."""
@@ -269,6 +274,12 @@ class ToolBox:
     def __init__(self, db: FixtureDB) -> None:
         self.db = db.model_copy(deep=True)
 
+    @traced(
+        "tool",
+        name=lambda a: str(a["name"]),
+        capture=lambda a: {"tool": a["name"], "args": a["args"]},
+        record=_record_tool,
+    )
     def call(self, name: str, args: dict[str, Any]) -> StrictModel:
         spec = TOOLS.get(name)
         if spec is None:

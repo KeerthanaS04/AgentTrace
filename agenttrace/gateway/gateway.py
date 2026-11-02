@@ -40,10 +40,33 @@ from agenttrace.gateway.types import (
     UnknownRoleError,
     UnverifiedModelError,
 )
+from agenttrace.tracing import SpanBuilder, traced
 
 log = logging.getLogger(__name__)
 
 MessageLike = Message | Mapping[str, str]
+
+
+def _llm_input(a: dict[str, Any]) -> dict[str, Any]:
+    messages = [m.model_dump() if isinstance(m, Message) else dict(m) for m in a["messages"]]
+    return {"role": a["role"], "messages": messages, "json_mode": a["json_mode"]}
+
+
+def _record_llm(span: SpanBuilder, result: CompletionResult) -> None:
+    span.model = result.model
+    span.params = dict(result.params)
+    span.tokens_in = result.tokens_in
+    span.tokens_out = result.tokens_out
+    span.cost_usd = result.cost_usd
+    span.output = {
+        "text": result.text,
+        "provider": result.provider,
+        "finish_reason": result.finish_reason,
+        "reasoning_tokens": result.reasoning_tokens,
+        "cache_hit": result.cache_hit,
+        "original_cost_usd": result.original_cost_usd,
+    }
+
 
 # Rough chars-per-token used only for the pre-call budget estimate (errs high).
 _CHARS_PER_TOKEN = 3
@@ -154,6 +177,8 @@ class Gateway:
 
     # ------------------------------------------------------------ calls
 
+    # Every model call, including each structured-output repair, is one "llm" span.
+    @traced("llm", "llm", capture=_llm_input, record=_record_llm)
     def complete(
         self,
         role: str,

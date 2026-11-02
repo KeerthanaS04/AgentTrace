@@ -72,10 +72,12 @@ def make_gateway(
     prompts: list[str] | None = None,
     calls: list[tuple[str, str]] | None = None,
     config_path: Path = CONFIG_PATH,
+    usage: dict[str, int] | None = None,
 ) -> Gateway:
     """A real Gateway whose providers are replaced by the scripted server.
 
-    `prompts` collects each agent prompt; `calls` collects (agent, model id) per request.
+    `prompts` collects each agent prompt; `calls` collects (agent, model id) per request;
+    `usage` is returned as each reply's token usage (default: none reported).
     """
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -87,7 +89,10 @@ def make_gateway(
         if calls is not None:
             calls.append((agent_of(prompt), body["model"]))
         content = json.dumps(script(prompt))
-        return httpx.Response(200, json={"choices": [{"message": {"content": content}}]})
+        reply: dict[str, Any] = {"choices": [{"message": {"content": content}}]}
+        if usage is not None:
+            reply["usage"] = usage
+        return httpx.Response(200, json=reply)
 
     config = load_config(config_path)
     return Gateway(
