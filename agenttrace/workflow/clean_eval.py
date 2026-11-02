@@ -74,7 +74,11 @@ def explain(result: WorkflowResult) -> str:
 
 
 def run_one(
-    gateway: Gateway, scenario: Scenario, roles: dict[str, str], profile: str
+    gateway: Gateway,
+    scenario: Scenario,
+    roles: dict[str, str],
+    profile: str,
+    run_id: str | None = None,
 ) -> tuple[WorkflowResult, float]:
     kb = load_kb()
     workflow = build_support_workflow(roles)
@@ -83,7 +87,9 @@ def run_one(
     ticket = scenario.to_input().ticket.model_dump(mode="json")
     started = time.perf_counter()
     result = workflow.run(
-        {"ticket": ticket}, run_id=f"{scenario.scenario_id}-{profile}", resources=resources
+        {"ticket": ticket},
+        run_id=run_id or f"{scenario.scenario_id}-{profile}",
+        resources=resources,
     )
     return result, time.perf_counter() - started
 
