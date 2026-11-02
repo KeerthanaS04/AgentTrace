@@ -28,4 +28,5 @@ Tests only report pass/fail. These commands print the actual measurements:
 | `python tasks.py smoke` | Each model role: ok / skipped / failed, latency, cost, and lifetime spend vs. budget caps (makes tiny live API calls) |
 | `python tasks.py retrieval` | Retrieval recall@1/3/5 on the dev and held-out query sets, every miss, and PASS/FAIL against the target |
 | `python tasks.py toy` | A toy 2-agent workflow run through the agent runtime: each step's input refs (which step produced each input), output, and explanation (no model calls, free) |
+| `python tasks.py clean -v` | The five-agent workflow on the 20 clean tickets: expected vs. actual decision, router category, contract violations, the reasoning behind each miss, and PASS/FAIL against 90%. Uses NVIDIA (free tier); repeat runs come from cache. Add `--only clean-05`, or `--role agent_alt_2` for another model |
 | `uv run pytest tests/<file>.py -v` | Each individual test by name, for one area |

@@ -33,6 +33,8 @@
 | 2026-10-31 | Fact matching | Fact text is matched whitespace-insensitively (`normalize_ws`), since bodies wrap across lines; the P1-T7 checker should use the same normalization | Claude |
 | 2026-11-01 | Reproducible numbers | Every number reported must come from a repo command, not an ad-hoc script. Added `python tasks.py retrieval`; README lists the measurement commands | User request |
 | 2026-11-01 | Tool design | Tools compute day counts from the fixture DB's `as_of` date (never the real clock, never the LLM). `refund_api` has `quote` (check only) and `issue` modes; the Tool Agent uses `quote`, since it runs before the Policy Agent decides | Claude |
+| 2026-11-01 | Agents under test | No OpenRouter key, so all agent roles run on NVIDIA's free tier (see §2). Each agent asks its model for JSON that includes its own rationale / cited evidence / confidence, so the `Explanation` comes from the model that decided | Claude |
+| 2026-11-01 | Retrieval design | The model writes 1–3 queries; BM25 does the search (reproducible). The ticket text is also searched, plus a standing "escalation rules" query whose docs are never cut by the 6-doc cap | Claude |
 | 2026-11-01 | Runtime design | Sync, sequential (gateway is sync). Each step binds every input explicitly to `FromInput(key)` or `FromStep(step, key)`; the graph is checked at construction (input/output keys, unknown steps, cycles). Each step record carries `input_refs` (producer step id + content hash), so P2-T2 provenance comes from declared wiring, not execution order. Step ids are deterministic (`{run_id}/{step}`) so replays line up. Values are JSON-copied across steps (no shared mutation). An agent exception becomes a step `error`; only its downstream steps are skipped | Claude |
 | | Team size / submission format | | |
 | 2026-10-28 | Non-Meta models | Include NVIDIA + OSS as judges and agents under test, so results hold up beyond Meta's own models (still check the rules) | User |
@@ -128,6 +130,18 @@
 - **Why it matters:** actual Meta spend is about $0.02 higher than the ledger shows. Negligible, but the ledger is a slight undercount.
 - **Action:** future probes go through the gateway.
 
+### 2026-11-01 · P1-T5 · NVIDIA: most listed models are not callable on this key
+- **What happened:** `GET /v1/models` lists 85 models (free call). One test prompt each (NVIDIA free credits, $0 Meta):
+  - **Work:** `nemotron-3.5-lightning-30b-a3b` (~5s), `nemotron-3-ultra-550b-a55b` (~7s, one 503 "overloaded"), `nemotron-3.5-bolt-e4b` (~2s), `mistral-large-4-1t-a52b` (~30s).
+  - **404 "Function not found for account":** mistral-large-2, nemotron-3-super-120b, kimi-k2.6, llama-3.1-nemotron-70b/ultra-253b, nemotron-nano-3, mistral-nemo-12b, mistral-7b, gemma-3-12b, phi-3.5-moe, nemotron-4-340b.
+  - **Time out (even at 200s):** gpt-oss-20b, gemma-4-31b-it, deepseek-v4.1-flash.
+- **Why it matters:** "listed" ≠ "usable". Any future model choice needs a test call first.
+- **Action:** `agent_default` = lightning, `agent_alt_1` = mistral-large-4, `agent_alt_2` = bolt, `judge_nvidia` = ultra. JSON mode works (`supports_json_mode: true`). Free tier priced at $0. `judge_oss` stays TODO_VERIFY (no OpenRouter key).
+
+### 2026-11-01 · P1-T5 · Nemotron thinking: off is faster and more reliable here
+- **What happened:** Nemotron reasons by default. `chat_template_kwargs: {enable_thinking: false}` cut a policy answer from ~507 to 43 output tokens (5.5s → 1.3s), still correct. `reasoning_effort: low` had no effect. With thinking on and `max_tokens: 4096`, some agent calls spent all 4096 tokens reasoning and returned nothing.
+- **Action:** agents run with thinking off. The judge keeps thinking on (revisit in P6-T1).
+
 ### 2026-10-29 · P0-T4 · Still unverified in `config/models.yaml`
 - **What happened:** the first config was written without dashboard access.
 - **Why it matters:** the gateway refuses `TODO_VERIFY` roles, so only `judge_deep` (Muse Wonder) is callable until these are filled in.
@@ -143,6 +157,15 @@
 ## 3. Parse Failures and Structured-Output Issues
 <!-- parse_failure counts by model/prompt version, common failure shapes, prompt fixes -->
 
+### 2026-11-01 · P1-T5 · Extra keys broke strict parsing, and repairs repeated the mistake
+- **What happened:** the Writer's reply had an unrequested `"reply_length_check": 84` key. Our schemas forbid extra keys, so it failed; at temperature 0 the model sent the identical JSON on both repair attempts, so the step failed.
+- **Action:** LLM reply schemas (`LLMReply`) now drop extra keys. The agents' own outputs stay strict. `AgentFailure` messages now include the last validation error.
+
+### 2026-11-01 · P1-T5 · Text details for the P1-T7 checker
+- Replies write "5‑7" with a non-breaking hyphen (U+2011), so a plain `"5-7 business days"` match would miss it. The checker must normalize dashes (and whitespace, per `normalize_ws`).
+- One Writer run said "5-10 business days" (the policy says 5-7): a natural hallucination. The checker's required facts will catch it.
+- The Policy Agent sometimes gives the right decision with the wrong amount (it missed KB-REF-009's $6.95 return fee on a $48 order). Decision accuracy doesn't grade amounts yet.
+
 ---
 
 ## 4. Replay and Determinism Issues
@@ -157,6 +180,23 @@
 
 ## 6. Scenario and Fault-Injection Issues
 <!-- Ineffective faults, mislabeled scenarios, dropped scenarios and why (P4-T4) -->
+
+### 2026-11-01 · P1-T5 · `ScenarioInput.category` would leak the Router's answer
+- **What happened:** `ScenarioInput` (the "workflow may see this" view) carries the true ticket category, which is exactly what the Router must predict.
+- **Action:** the workflow's only input is `ticket`; `category` is used by the eval harness only. A test checks no prompt contains ground-truth fields.
+
+### 2026-11-01 · P1-T5 · How the 20 clean tickets got to 95%, and the one natural miss
+Each run is `python tasks.py clean` (agent_default, thinking off):
+
+| Change | Score | Misses |
+|---|---|---|
+| First run | 17/20 (85%) | 03, 15: escalation policy not retrieved; 18: date reasoning |
+| Standing escalation query | 17/20 (85%) | standing docs cut off by the doc cap (my bug); 05: final-sale doc crowded out |
+| Standing docs added after the cap (user's run) | 18/20 (90%) | 15: prompt told the agent to ignore ticket text, so it ignored the legal threat (my bug); 18 |
+| Prompt fix: escalation rules include what the customer says | **19/20 (95%)** | 18 only |
+
+- **clean-18 is left as a natural error:** the model claims a Jan 2 delivery is "between Nov 15 and Dec 31". The right policy and data were provided. No ticket-specific prompt rule was added for it.
+- **Caveat:** prompts were adjusted while looking at these 20 tickets, so they're a dev set; the honest held-out number comes from the Phase 4 scenarios.
 
 ---
 
@@ -183,6 +223,7 @@
 
 | Date | Metric | Value | 95% CI | n | Config / commit |
 |---|---|---|---|---|---|
+| 2026-11-01 | Clean-ticket decision accuracy (dev set) | 19/20 = 95% | — (dev set, not a headline number) | 20 | agent_default = nemotron-3.5-lightning, thinking off; P1-T5 branch |
 
 ---
 

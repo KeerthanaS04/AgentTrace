@@ -64,6 +64,7 @@ def _gateway(config: GatewayConfig, tmp_path: Path, seen: list[dict[str, object]
 def test_swapping_a_role_model_is_config_only(tmp_path: Path) -> None:
     """Done-when for P0-T4: change a role's model in YAML, nothing else, and calls follow."""
     raw = yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8"))
+    raw["roles"]["agent_default"]["provider"] = "openrouter"
     raw["roles"]["agent_default"]["model"] = "some-org/model-a"
     path_a = tmp_path / "a.yaml"
     path_a.write_text(yaml.safe_dump(raw))

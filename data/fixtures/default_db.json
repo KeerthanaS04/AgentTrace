@@ -103,6 +103,18 @@
       "items": [{"sku": "HM-PAN-SET", "name": "Nonstick Pan Set", "category": "home", "price": 110.00}]
     },
     {
+      "order_id": "O1016", "customer_id": "C003", "email": "chloe.park@example.com",
+      "status": "delivered", "placed_at": "2025-12-29", "shipped_at": "2025-12-30", "delivered_at": "2026-01-02",
+      "payment_method": "paypal",
+      "items": [{"sku": "EL-SPK-BT", "name": "Bluetooth Speaker", "category": "electronics", "price": 59.00}]
+    },
+    {
+      "order_id": "O1017", "customer_id": "C001", "email": "ana.ruiz@example.com",
+      "status": "delivered", "placed_at": "2025-12-05", "shipped_at": "2025-12-06", "delivered_at": "2025-12-10",
+      "payment_method": "card", "card_last4": "4417",
+      "items": [{"sku": "AP-GLV-07", "name": "Leather Gloves", "category": "apparel", "price": 38.00}]
+    },
+    {
       "order_id": "O0901", "customer_id": "C006", "email": "farid.haddad@example.com",
       "status": "delivered", "placed_at": "2025-10-25", "shipped_at": "2025-10-27", "delivered_at": "2025-10-30",
       "shipping_fee": 5.99, "payment_method": "card", "card_last4": "7710",
