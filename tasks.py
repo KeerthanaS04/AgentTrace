@@ -1,12 +1,13 @@
 """Cross-platform task runner (stands in for `make` where it isn't installed).
 
-Usage: python tasks.py <setup|test|lint|format|serve|eval|smoke|retrieval|toy>
+Usage: python tasks.py <setup|test|lint|format|serve|eval|smoke|retrieval|toy|clean> [args]
 """
 
 from __future__ import annotations
 
 import subprocess
 import sys
+from collections.abc import Callable
 
 
 def _run(*cmd: str) -> int:
@@ -67,7 +68,14 @@ def toy() -> int:
     return _run("uv", "run", "python", "-m", "agenttrace.workflow.toy")
 
 
-TASKS = {
+def clean(*args: str) -> int:
+    return _run("uv", "run", "python", "-m", "agenttrace.workflow.clean_eval", *args)
+
+
+# Tasks that forward extra command-line arguments (e.g. `clean --role agent_alt_2`).
+WITH_ARGS: dict[str, Callable[..., int]] = {"clean": clean}
+
+TASKS: dict[str, Callable[..., int]] = {
     "setup": setup,
     "test": test,
     "lint": lint,
@@ -77,14 +85,15 @@ TASKS = {
     "smoke": smoke,
     "retrieval": retrieval,
     "toy": toy,
+    **WITH_ARGS,
 }
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 1 or argv[0] not in TASKS:
-        print(f"usage: python tasks.py <{'|'.join(TASKS)}>")
+    if not argv or argv[0] not in TASKS or (len(argv) > 1 and argv[0] not in WITH_ARGS):
+        print(f"usage: python tasks.py <{'|'.join(TASKS)}> [args for: {', '.join(WITH_ARGS)}]")
         return 2
-    return TASKS[argv[0]]()
+    return TASKS[argv[0]](*argv[1:])
 
 
 if __name__ == "__main__":

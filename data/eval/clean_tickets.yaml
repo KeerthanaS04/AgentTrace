@@ -1,0 +1,149 @@
+# 20 clean (no fault injected, F0) support tickets for P1-T5.
+# Target: >= 90% reach the expected decision with agent_default.
+#
+# Each expected decision follows from the KB (data/kb) applied to the fixture DB
+# (data/fixtures/default_db.json, as_of 2026-01-20); the `why` comment gives the rule.
+# required_facts are strings the reply should contain; P1-T7's checker grades them.
+# These tickets were also used while writing the prompts, so they are a dev set:
+# held-out accuracy comes from the generated scenarios in Phase 4.
+
+- scenario_id: clean-01
+  category: refund
+  # KB-REF-001: 18 days after delivery < 30-day window, unused -> approve.
+  ticket: {ticket_id: T-0101, customer_id: C001, subject: Return a sweater,
+    body: "Hi, I'd like to return the wool sweater from order O1001. It doesn't fit and I never wore it, tags still on. Can I get a refund?"}
+  ground_truth: {fault_code: F0, expected_final: {decision: approve, required_facts: ["5-7 business days"]}}
+
+- scenario_id: clean-02
+  category: refund
+  # KB-REF-002: electronics, 8 days < 15-day window, opened -> refund minus 10% restocking fee.
+  ticket: {ticket_id: T-0102, customer_id: C001, subject: Headphones return,
+    body: "I opened and tried the noise-cancelling headphones from order O1002 but I don't like the sound. They work fine. I want to return them for a refund."}
+  ground_truth: {fault_code: F0, expected_final: {decision: approve, required_facts: ["10%"]}}
+
+- scenario_id: clean-03
+  category: refund
+  # KB-REF-011 Plus electronics 30 days (17 days ok), but $899 > $200 -> KB-REF-005 supervisor.
+  ticket: {ticket_id: T-0103, customer_id: C002, subject: Laptop refund,
+    body: "I'm a Plus member. The laptop from order O1003 is unopened and I changed my mind. Please refund the full $899."}
+  ground_truth: {fault_code: F0, expected_final: {decision: escalate, required_facts: ["supervisor"]}}
+
+- scenario_id: clean-04
+  category: refund
+  # KB-REF-004: damaged, reported 3 days after delivery (< 7) with a photo -> full refund.
+  ticket: {ticket_id: T-0104, customer_id: C003, subject: Blender arrived broken,
+    body: "My countertop blender (order O1004) arrived with a cracked jar. I've attached a photo of the damage. I'd like a full refund please."}
+  ground_truth: {fault_code: F0, expected_final: {decision: approve, required_facts: ["79"]}}
+
+- scenario_id: clean-05
+  category: refund
+  # KB-REF-003: Final Sale clearance item, not damaged -> cannot be refunded.
+  ticket: {ticket_id: T-0105, customer_id: C003, subject: Return rain jacket,
+    body: "The rain jacket from order O1005 is too big. It's in perfect condition. How do I return it for a refund?"}
+  ground_truth: {fault_code: F0, expected_final: {decision: deny, required_facts: ["Final Sale"]}}
+
+- scenario_id: clean-06
+  category: refund
+  # KB-ACC-003: account suspended (fraud review) -> no refunds, escalate to Trust & Safety.
+  ticket: {ticket_id: T-0106, customer_id: C004, subject: Tablet refund,
+    body: "I want to return the tablet from order O1006 for a refund. It's still sealed."}
+  ground_truth: {fault_code: F0, expected_final: {decision: escalate, required_facts: ["Trust & Safety"]}}
+
+- scenario_id: clean-07
+  category: refund
+  # KB-ESC-003: 4 refunds in the last 90 days (> 3) -> escalate to Trust & Safety even though $60 < $200.
+  ticket: {ticket_id: T-0107, customer_id: C006, subject: Return running shoes,
+    body: "I'd like to return the running shoes from order O1007. Never worn. Please refund me."}
+  ground_truth: {fault_code: F0, expected_final: {decision: escalate, required_facts: ["Trust & Safety"]}}
+
+- scenario_id: clean-08
+  category: refund
+  # KB-ESC-002: chargeback filed on the order -> do not refund, escalate to the Payments team.
+  ticket: {ticket_id: T-0108, customer_id: C007, subject: TV refund,
+    body: "I disputed the charge for the TV from order O1008 with my bank, but I'd also like Brightcart to refund me directly so this gets sorted faster."}
+  ground_truth: {fault_code: F0, expected_final: {decision: escalate, required_facts: ["Payments team"]}}
+
+- scenario_id: clean-09
+  category: refund
+  # KB-REF-011: Plus member, 56 days after delivery < 60-day Plus window -> approve.
+  ticket: {ticket_id: T-0109, customer_id: C008, subject: Rug return,
+    body: "I'd like to return the area rug from order O1009. It's unused and still rolled in its packaging. I'm a Brightcart Plus member."}
+  ground_truth: {fault_code: F0, expected_final: {decision: approve, required_facts: ["140"]}}
+
+- scenario_id: clean-10
+  category: refund
+  # KB-REF-001: 80 days after delivery > 30 days, not Plus, delivered Nov 1 (before the holiday period) -> deny.
+  ticket: {ticket_id: T-0110, customer_id: C001, subject: Return desk lamp,
+    body: "Can I still return the desk lamp from order O1010? I haven't used it."}
+  ground_truth: {fault_code: F0, expected_final: {decision: deny, required_facts: ["30 days"]}}
+
+- scenario_id: clean-11
+  category: shipping
+  # KB-SHP-007: order still processing (not shipped) -> cancel for a full refund.
+  ticket: {ticket_id: T-0111, customer_id: C003, subject: Cancel my order,
+    body: "I ordered a bath towel set yesterday (order O1011) but I no longer need it. Please cancel it."}
+  ground_truth: {fault_code: F0, expected_final: {decision: approve, required_facts: ["54"]}}
+
+- scenario_id: clean-12
+  category: account
+  # KB-ACC-001: support agents cannot see or set passwords -> deny, point to the reset link.
+  ticket: {ticket_id: T-0112, customer_id: C001, subject: Forgot password,
+    body: "I forgot my password. Can you just tell me what it is, or set it to something new for me?"}
+  ground_truth: {fault_code: F0, expected_final: {decision: deny, required_facts: ["30 minutes"]}}
+
+- scenario_id: clean-13
+  category: shipping
+  # KB-SHP-005: express order delivered after its promised date -> refund the $14.99 express fee.
+  ticket: {ticket_id: T-0113, customer_id: C002, subject: Late express delivery,
+    body: "I paid for express shipping on order O1013 but the coffee maker arrived three days late. I want the express fee refunded."}
+  ground_truth: {fault_code: F0, expected_final: {decision: approve, required_facts: ["14.99"]}}
+
+- scenario_id: clean-14
+  category: refund
+  # KB-REF-003: gift cards are non-refundable in all cases.
+  ticket: {ticket_id: T-0114, customer_id: C008, subject: Gift card refund,
+    body: "I bought a $50 gift card (order O1014) but the person I bought it for doesn't shop at Brightcart. Can I get my money back?"}
+  ground_truth: {fault_code: F0, expected_final: {decision: deny, required_facts: ["non-refundable"]}}
+
+- scenario_id: clean-15
+  category: refund
+  # KB-ESC-001: customer mentions legal action -> escalate (even though the return itself is in policy).
+  ticket: {ticket_id: T-0115, customer_id: C001, subject: Sweater refund or I call my lawyer,
+    body: "I want a refund for the sweater in order O1001. If this isn't sorted today I'm contacting my lawyer and taking legal action."}
+  ground_truth: {fault_code: F0, expected_final: {decision: escalate, required_facts: []}}
+
+- scenario_id: clean-16
+  category: refund
+  # KB-REF-013: Brightcart does not match competitor prices.
+  ticket: {ticket_id: T-0116, customer_id: C001, subject: Price match,
+    body: "Another store is selling the same headphones I bought in order O1002 for $25 less. Please refund me the difference."}
+  ground_truth: {fault_code: F0, expected_final: {decision: deny, required_facts: ["competitor"]}}
+
+- scenario_id: clean-17
+  category: account
+  # KB-ACC-004: Plus since 2025-06-01, well past 14 days -> cancelling gives no refund.
+  ticket: {ticket_id: T-0117, customer_id: C002, subject: Cancel Plus and refund,
+    body: "Please cancel my Brightcart Plus membership and refund the $79 annual fee."}
+  ground_truth: {fault_code: F0, expected_final: {decision: deny, required_facts: ["14 days"]}}
+
+- scenario_id: clean-18
+  category: refund
+  # KB-REF-002: electronics, 18 days after delivery > 15-day window, not Plus, delivered Jan 2 (no holiday extension) -> deny.
+  ticket: {ticket_id: T-0118, customer_id: C003, subject: Return speaker,
+    body: "I'd like to return the bluetooth speaker from order O1016. It's unopened, I just don't need it anymore."}
+  ground_truth: {fault_code: F0, expected_final: {decision: deny, required_facts: ["15 days"]}}
+
+- scenario_id: clean-19
+  category: refund
+  # KB-REF-008: delivered Dec 10 (Nov 15 - Dec 31) -> returnable until Jan 31, today is Jan 20 -> approve
+  # even though 41 days > 30.
+  ticket: {ticket_id: T-0119, customer_id: C001, subject: Return gloves,
+    body: "I got leather gloves in order O1017 back in December. They're unworn. Can I still return them for a refund?"}
+  ground_truth: {fault_code: F0, expected_final: {decision: approve, required_facts: ["January 31"]}}
+
+- scenario_id: clean-20
+  category: account
+  # KB-ACC-005: no access to the current email -> escalate to Trust & Safety for manual verification.
+  ticket: {ticket_id: T-0120, customer_id: C001, subject: Change account email,
+    body: "I need to change the email on my account, but I no longer have access to my old email address, so I can't get the verification code."}
+  ground_truth: {fault_code: F0, expected_final: {decision: escalate, required_facts: ["Trust & Safety"]}}

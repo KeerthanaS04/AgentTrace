@@ -43,13 +43,21 @@ providers:
 
   nvidia:
     # NVIDIA hosted NIM (build.nvidia.com). OpenAI-compatible. Auth: Bearer NVIDIA_API_KEY.
-    # Endpoint taken from NVIDIA's public API docs; confirm it on your build.nvidia.com key page.
+    # Verified 2026-11-01: GET /v1/models lists 85 models, but most return 404 "not found
+    # for account" or time out. The four below answered a test prompt (see findings.md).
     base_url: https://integrate.api.nvidia.com/v1
     api_key_env: NVIDIA_API_KEY
-    supports_json_mode: false
+    supports_json_mode: true    # verified 2026-11-01: response_format json_object accepted
+    # Nemotron models think before answering unless the chat template turns it off:
+    # chat_template_kwargs {enable_thinking: false} cut ~500 -> ~45 output tokens, 5s -> 1.3s.
     timeout_s: 120
     max_retries: 4
-    models: {}   # add pricing per model once chosen (free-tier credits may be 0)
+    # Free build.nvidia.com tier: no per-token charge (request-limited), so priced at 0.
+    models:
+      nvidia/nemotron-3.5-lightning-30b-a3b: {input_per_m: 0.0, output_per_m: 0.0}
+      nvidia/nemotron-3-ultra-550b-a55b: {input_per_m: 0.0, output_per_m: 0.0}
+      nvidia/nemotron-3.5-bolt-e4b: {input_per_m: 0.0, output_per_m: 0.0}
+      mistralai/mistral-large-4-1t-a52b: {input_per_m: 0.0, output_per_m: 0.0}
 
   openrouter:
     # OpenRouter (open-source judges / agents under test). OpenAI-compatible.
@@ -89,10 +97,11 @@ roles:
     params: {temperature: 0, max_tokens: 8192}
 
   judge_nvidia:
-    # Independent open-weight judge (Nemotron family).
+    # Independent open-weight judge: the largest Nemotron that answers on this key.
+    # Thinking stays on (judging benefits from it); occasional 503s are retried.
     provider: nvidia
-    model: TODO_VERIFY        # exact Nemotron model name from build.nvidia.com
-    params: {temperature: 0, max_tokens: 1024}
+    model: nvidia/nemotron-3-ultra-550b-a55b
+    params: {temperature: 0, max_tokens: 4096}
 
   judge_oss:
     # Independent open-source judge, also used for high-volume continuous scoring.
@@ -102,17 +111,22 @@ roles:
 
   # --- Agents under test ---------------------------------------------------
   # Non-Meta by default so Meta credits go to diagnosis (see phases.md budget plan).
+  # No OpenRouter key yet, so all three run on NVIDIA's free tier.
   agent_default:
-    provider: openrouter
-    model: TODO_VERIFY
-    params: {temperature: 0, max_tokens: 1024}
+    # Mid-size Nemotron (30B MoE, 3B active), thinking off: ~1-2s per call.
+    # Thinking on was tried: some calls spent all 4096 tokens reasoning with no output.
+    provider: nvidia
+    model: nvidia/nemotron-3.5-lightning-30b-a3b
+    params: {temperature: 0, max_tokens: 1024, chat_template_kwargs: {enable_thinking: false}}
 
   agent_alt_1:
+    # Different model family (Mistral). Slow (~30s per call on the free tier).
     provider: nvidia
-    model: TODO_VERIFY
+    model: mistralai/mistral-large-4-1t-a52b
     params: {temperature: 0, max_tokens: 1024}
 
   agent_alt_2:
-    provider: openrouter
-    model: TODO_VERIFY        # a different model family from agent_default
+    # Small, fast Nemotron: the "weaker agent" for model-agnostic evaluation.
+    provider: nvidia
+    model: nvidia/nemotron-3.5-bolt-e4b
     params: {temperature: 0, max_tokens: 1024}
