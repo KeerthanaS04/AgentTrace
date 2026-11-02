@@ -40,4 +40,4 @@ def test_cli_rejects_unknown_command() -> None:
 
 
 def test_cli_stub_returns_nonzero() -> None:
-    assert cli.main(["run"]) == 1
+    assert cli.main(["diagnose"]) == 1  # `run` is real since P2-T3
