@@ -8,8 +8,10 @@
 Which model each agent uses comes from config/agents.yaml (profile -> step -> role) and
 config/models.yaml (role -> model), never from code. Prints one row per ticket, then
 accuracy and PASS/FAIL against the 90% target; with several profiles, a comparison
-table. Full step records go to reports/clean_eval_<profile>.json. Repeat runs are
-served from the gateway cache, so they are free and identical.
+table. Decision accuracy is the P1-T5 target; "final" is the stricter P1-T7 outcome check
+(right decision AND the reply states every required fact). Full step records go to
+reports/clean_eval_<profile>.json. Repeat runs are served from the gateway cache, so they
+are free and identical.
 """
 
 from __future__ import annotations
@@ -22,6 +24,7 @@ from typing import Any
 
 import yaml
 
+from agenttrace.evaluation.outcome import check_outcome
 from agenttrace.gateway.gateway import Gateway
 from agenttrace.schemas.ground_truth import Scenario
 from agenttrace.workflow.agent_config import DEFAULT_PROFILE, load_agents_config
@@ -94,8 +97,8 @@ def evaluate_profile(
     """Run every scenario on one profile; print rows unless quiet; return the summary."""
     if not quiet:
         print(
-            f"{'scenario':<10} {'expected':<9} {'got':<9} {'ok':<3} {'category':<17} {'secs':>5}"
-            "  contract violations"
+            f"{'scenario':<10} {'expected':<9} {'got':<9} {'ok':<3} {'final':<6}"
+            f"{'category':<17} {'secs':>5}  contract violations / reply problems"
         )
     rows: list[dict[str, Any]] = []
     for sc in scenarios:
@@ -104,12 +107,17 @@ def evaluate_profile(
         got = result.outputs.get("decision", "-")
         cat = result.outputs.get("category", "-")
         found = violations(result)
-        ok = got == expected
+        outcome = check_outcome(sc.ground_truth.expected_final, result.outputs)
+        ok = outcome.decision_ok
         if not quiet:
             cat_text = cat if cat == sc.category else f"{cat}(want {sc.category})"
+            problems = list(found)
+            if outcome.facts_missing:
+                problems.append(f"reply lacks {outcome.facts_missing}")
             print(
                 f"{sc.scenario_id:<10} {expected:<9} {got:<9} {'Y' if ok else 'N':<3} "
-                f"{cat_text:<17} {secs:5.1f}  {'; '.join(found) if found else '-'}"
+                f"{'Y' if outcome.correct else 'N':<6}{cat_text:<17} {secs:5.1f}  "
+                f"{'; '.join(problems) if problems else '-'}"
             )
             if verbose and (not ok or len(scenarios) == 1):
                 print(explain(result))
@@ -119,6 +127,8 @@ def evaluate_profile(
                 "expected": expected,
                 "got": got,
                 "correct": ok,
+                "final_correct": outcome.correct,
+                "facts_missing": outcome.facts_missing,
                 "category_expected": sc.category,
                 "category_got": cat,
                 "completed": result.status == "ok",
@@ -135,6 +145,7 @@ def evaluate_profile(
         "n": n,
         "correct": sum(r["correct"] for r in rows),
         "accuracy": sum(r["correct"] for r in rows) / n if n else 0.0,
+        "final_correct": sum(r["final_correct"] for r in rows),
         "category_correct": sum(r["category_expected"] == r["category_got"] for r in rows),
         "completed": sum(r["completed"] for r in rows),
         "with_violations": sum(bool(r["violations"]) for r in rows),
@@ -151,6 +162,7 @@ def evaluate_profile(
 def print_summary(s: dict[str, Any]) -> None:
     n = s["n"]
     print(f"\ndecision accuracy : {s['correct']}/{n} = {s['accuracy']:.0%}  (target {TARGET:.0%})")
+    print(f"final outcome     : {s['final_correct']}/{n}  (right decision + required facts)")
     print(f"router category   : {s['category_correct']}/{n}")
     print(f"runs completed    : {s['completed']}/{n}  (no step failed)")
     print(f"tickets with contract violations: {s['with_violations']}/{n}")
@@ -160,12 +172,13 @@ def print_summary(s: dict[str, Any]) -> None:
 
 def print_comparison(summaries: list[dict[str, Any]]) -> None:
     print("\n=== Profile comparison ===")
-    head = ("profile", "accuracy", "router", "completed", "violations", "secs")
+    head = ("profile", "decision", "final", "router", "completed", "violations", "secs")
     print(f"{head[0]:<10}" + "".join(f"{h:>12}" for h in head[1:]) + "  models")
     for s in summaries:
         n = s["n"]
         stats = (
             f"{s['correct']}/{n} {s['accuracy']:.0%}",
+            f"{s['final_correct']}/{n}",
             f"{s['category_correct']}/{n}",
             f"{s['completed']}/{n}",
             f"{s['with_violations']}/{n}",
@@ -174,15 +187,15 @@ def print_comparison(summaries: list[dict[str, Any]]) -> None:
         models = ", ".join(sorted(set(s["models"].values())))
         print(f"{s['profile']:<10}" + "".join(f"{c:>12}" for c in stats) + f"  {models}")
     ids = [r["scenario_id"] for r in summaries[0]["rows"]]
-    print(
-        f"\n{'scenario':<10} {'expected':<9} " + " ".join(f"{s['profile']:<9}" for s in summaries)
-    )
+    print("\nx = wrong decision, ~ = right decision but the reply lacks a required fact")
+    print(f"{'scenario':<10} {'expected':<9} " + " ".join(f"{s['profile']:<11}" for s in summaries))
     for i, sid in enumerate(ids):
         expected = summaries[0]["rows"][i]["expected"]
         cells = []
         for s in summaries:
             row = s["rows"][i]
-            cells.append(f"{row['got'] + ('' if row['correct'] else ' x'):<9}")
+            mark = "" if row["final_correct"] else " ~" if row["correct"] else " x"
+            cells.append(f"{row['got'] + mark:<11}")
         print(f"{sid:<10} {expected:<9} " + " ".join(cells))
 
 
