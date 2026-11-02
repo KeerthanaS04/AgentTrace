@@ -108,7 +108,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
   - *Done when:* a toy 2-agent workflow runs end to end.
 - [x] **P1-T5: The five agents.** Router → Retriever → Tool Agent → Policy Agent → Response Writer, each with a `NodeContract` in `workflow/contracts.py`.
   - *Done when:* ≥90% of 20 clean tickets reach the correct final decision.
-- [ ] **P1-T6: Model-swappable agents.** Per-agent model from config.
+- [x] **P1-T6: Model-swappable agents.** Per-agent model from config.
   - *Done when:* workflow runs on ≥3 different models via config only.
 - [ ] **P1-T7: Final-outcome checker.** Deterministic check (expected decision + required facts in reply).
   - *Done when:* unit tested on correct and incorrect outputs.

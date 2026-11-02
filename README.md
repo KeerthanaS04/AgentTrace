@@ -19,6 +19,15 @@ python tasks.py lint
 
 `make <target>` works the same where `make` is installed.
 
+## Choosing models
+
+Code never names a model. Two config files decide which model each agent uses:
+
+- [config/models.yaml](config/models.yaml): **role -> model**, e.g. `agent_alt_2 -> nvidia/nemotron-3.5-bolt-e4b`, with its params and pricing.
+- [config/agents.yaml](config/agents.yaml): **profile -> which role each agent uses**, e.g. profile `mixed` = small model everywhere except the Policy Agent.
+
+Swap a model by editing one of these files, then run `python tasks.py clean --profile <name>`.
+
 ## Seeing the numbers
 
 Tests only report pass/fail. These commands print the actual measurements:
@@ -28,5 +37,6 @@ Tests only report pass/fail. These commands print the actual measurements:
 | `python tasks.py smoke` | Each model role: ok / skipped / failed, latency, cost, and lifetime spend vs. budget caps (makes tiny live API calls) |
 | `python tasks.py retrieval` | Retrieval recall@1/3/5 on the dev and held-out query sets, every miss, and PASS/FAIL against the target |
 | `python tasks.py toy` | A toy 2-agent workflow run through the agent runtime: each step's input refs (which step produced each input), output, and explanation (no model calls, free) |
-| `python tasks.py clean -v` | The five-agent workflow on the 20 clean tickets: expected vs. actual decision, router category, contract violations, the reasoning behind each miss, and PASS/FAIL against 90%. Uses NVIDIA (free tier); repeat runs come from cache. Add `--only clean-05`, or `--role agent_alt_2` for another model |
+| `python tasks.py clean -v` | The five-agent workflow on the 20 clean tickets: expected vs. actual decision, router category, contract violations, the reasoning behind each miss, and PASS/FAIL against 90%. Uses NVIDIA (free tier); repeat runs come from cache. Add `--only clean-05` for one ticket |
+| `python tasks.py clean --profile default ultra bolt -q` | The same 20 tickets on several model profiles (from `config/agents.yaml`), then a side-by-side table: accuracy, router accuracy, completed runs, contract violations, time, and each ticket's decision per model |
 | `uv run pytest tests/<file>.py -v` | Each individual test by name, for one area |
