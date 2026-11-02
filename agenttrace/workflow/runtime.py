@@ -8,6 +8,11 @@ from, so data flow is always declared, never inferred from execution order.
 
 Values crossing step boundaries must be JSON-serializable; they are copied on the way
 in and out, so an agent can never mutate another step's recorded output.
+
+Every run is traced (P2-T1): the workflow input is a "message" span, each step an
+"agent" span whose span_id is its step id, and the model, tool, and search calls made
+inside a step are nested spans (see `agenttrace.tracing`). `WorkflowResult.to_run()`
+packages them as a `Run`.
 """
 
 from __future__ import annotations
@@ -21,7 +26,9 @@ from pydantic import Field
 
 from agenttrace.gateway.cache import content_hash
 from agenttrace.schemas.base import NonEmptyStr, StrictModel, UtcDatetime, utc_now
-from agenttrace.schemas.span import Explanation, Ref
+from agenttrace.schemas.run import Run
+from agenttrace.schemas.span import Explanation, Ref, Span
+from agenttrace.tracing import TraceContext
 
 T = TypeVar("T")
 
@@ -98,7 +105,7 @@ class Step:
 
 
 class StepRecord(StrictModel):
-    """One executed (or skipped) step. Becomes an agent span once tracing lands (P2)."""
+    """One executed (or skipped) step; the same data as its agent span, minus nesting."""
 
     step_id: NonEmptyStr
     step: NonEmptyStr
@@ -117,12 +124,30 @@ class StepRecord(StrictModel):
 class WorkflowResult(StrictModel):
     run_id: NonEmptyStr
     workflow: NonEmptyStr
+    workflow_version: NonEmptyStr = "1"
     status: Literal["ok", "failed"]
     outputs: dict[str, Any] = Field(default_factory=dict)
     steps: list[StepRecord] = Field(default_factory=list)
+    # Every span of the run, parents before children (see module docstring).
+    spans: list[Span] = Field(default_factory=list)
 
     def step(self, name: str) -> StepRecord:
         return next(s for s in self.steps if s.step == name)
+
+    def to_run(self, *, scenario_id: str | None = None, final_correct: bool | None = None) -> Run:
+        """The run in the trace schema: all spans plus which model each agent used."""
+        step_ids = {r.step_id for r in self.steps}
+        return Run(
+            run_id=self.run_id,
+            scenario_id=scenario_id,
+            workflow_version=f"{self.workflow}@{self.workflow_version}",
+            agent_models={
+                s.node_id: s.model for s in self.spans if s.span_id in step_ids and s.model
+            },
+            final_output=self.outputs,
+            final_correct=final_correct,
+            spans=self.spans,
+        )
 
 
 def step_id(run_id: str, step: str) -> str:
@@ -149,8 +174,11 @@ class Workflow:
         inputs: Sequence[str],
         steps: Sequence[Step],
         outputs: Mapping[str, Source],
+        *,
+        version: str = "1",
     ) -> None:
         self.name = name
+        self.version = version
         self.inputs = tuple(inputs)
         self.steps = {s.name: s for s in steps}
         self.outputs = dict(outputs)
@@ -232,8 +260,11 @@ class Workflow:
 
         values: dict[str, dict[str, Any]] = {INPUT_STEP: _copy_json(dict(inputs), "workflow input")}
         records: dict[str, StepRecord] = {}
-        for name in self.order:
-            records[name] = self._run_step(self.steps[name], run_id, values, records, resources)
+        with TraceContext(run_id) as trace:
+            trace.instant("message", INPUT_STEP, agent=self.name, output=values[INPUT_STEP])
+            for name in self.order:
+                step = self.steps[name]
+                records[name] = self._run_step(step, run_id, values, records, resources, trace)
 
         outputs: dict[str, Any] = {}
         for key, src in self.outputs.items():
@@ -244,9 +275,11 @@ class Workflow:
         return WorkflowResult(
             run_id=run_id,
             workflow=self.name,
+            workflow_version=self.version,
             status="ok" if ok else "failed",
             outputs=outputs,
             steps=[records[n] for n in self.order],
+            spans=trace.spans,
         )
 
     def _run_step(
@@ -256,6 +289,7 @@ class Workflow:
         values: dict[str, dict[str, Any]],
         records: Mapping[str, StepRecord],
         resources: Mapping[str, Any] | None,
+        trace: TraceContext,
     ) -> StepRecord:
         base: dict[str, Any] = {
             "step_id": step_id(run_id, step.name),
@@ -265,7 +299,15 @@ class Workflow:
         }
         failed = [d for d in self.dependencies(step.name) if records[d].status != "ok"]
         if failed:
-            return StepRecord(**base, status="skipped", error=f"upstream not ok: {failed}")
+            error = f"upstream not ok: {failed}"
+            trace.instant(
+                "agent",
+                step.name,
+                agent=step.agent.name,
+                params=step.params,
+                error=f"skipped: {error}",
+            )
+            return StepRecord(**base, status="skipped", error=error)
 
         resolved: dict[str, Any] = {}
         refs: list[Ref] = []
@@ -281,24 +323,36 @@ class Workflow:
             run_id=run_id, step=step.name, params=step.params, resources=resources or {}
         )
         started = utc_now()
-        try:
-            result = step.agent.run(_copy_json(resolved, "inputs"), ctx)
-            if not isinstance(result, AgentOutput):
-                raise TypeError(f"agent returned {type(result).__name__}, not AgentOutput")
-            got, want = set(result.output), set(step.agent.output_keys)
-            if got != want:
-                raise ValueError(f"output keys {sorted(got)} != declared {sorted(want)}")
-            output = _copy_json(result.output, "output")
-        except Exception as exc:
-            return StepRecord(
-                **base,
-                status="error",
-                inputs=resolved,
-                input_refs=refs,
-                started_at=started,
-                ended_at=utc_now(),
-                error=f"{type(exc).__name__}: {exc}",
-            )
+        with trace.span(
+            "agent",
+            step.name,
+            agent=step.agent.name,
+            input=resolved,
+            input_refs=refs,
+            params=step.params,
+            prompt_version=getattr(step.agent, "prompt_version", None),
+        ) as span:
+            try:
+                result = step.agent.run(_copy_json(resolved, "inputs"), ctx)
+                if not isinstance(result, AgentOutput):
+                    raise TypeError(f"agent returned {type(result).__name__}, not AgentOutput")
+                got, want = set(result.output), set(step.agent.output_keys)
+                if got != want:
+                    raise ValueError(f"output keys {sorted(got)} != declared {sorted(want)}")
+                output = _copy_json(result.output, "output")
+            except Exception as exc:
+                span.error = f"{type(exc).__name__}: {exc}"
+                return StepRecord(
+                    **base,
+                    status="error",
+                    inputs=resolved,
+                    input_refs=refs,
+                    started_at=started,
+                    ended_at=utc_now(),
+                    error=span.error,
+                )
+            span.output = output
+            span.explanation = result.explanation
         values[step.name] = output
         return StepRecord(
             **base,

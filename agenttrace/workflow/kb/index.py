@@ -15,6 +15,7 @@ from collections.abc import Iterable
 from pydantic import Field
 
 from agenttrace.schemas.base import NonEmptyStr, StrictModel
+from agenttrace.tracing import SpanBuilder, traced
 from agenttrace.workflow.kb.loader import KnowledgeBase
 from agenttrace.workflow.kb.models import KBDoc
 
@@ -119,6 +120,10 @@ class SearchHit(StrictModel):
     title: str
 
 
+def _record_hits(span: SpanBuilder, hits: list[SearchHit]) -> None:
+    span.output = {"hits": [h.model_dump(mode="json") for h in hits]}
+
+
 class BM25Index:
     def __init__(
         self,
@@ -153,6 +158,7 @@ class BM25Index:
     def __len__(self) -> int:
         return len(self._docs)
 
+    @traced("retrieval", "search", record=_record_hits)
     def search(self, query: str, k: int = 3) -> list[SearchHit]:
         """Top-k docs by BM25 score. Ties break by doc_id; zero-score docs are dropped."""
         if k < 1:
