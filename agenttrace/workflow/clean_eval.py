@@ -33,6 +33,7 @@ from agenttrace.workflow.agent_config import DEFAULT_PROFILE, load_agents_config
 from agenttrace.workflow.contracts import run_checks
 from agenttrace.workflow.kb.index import BM25Index
 from agenttrace.workflow.kb.loader import load_kb
+from agenttrace.workflow.provenance import check_provenance
 from agenttrace.workflow.runtime import WorkflowResult
 from agenttrace.workflow.support import build_support_workflow, make_resources
 from agenttrace.workflow.tools import load_db
@@ -104,6 +105,7 @@ def evaluate_profile(
             f"{'category':<17} {'secs':>5}  contract violations / reply problems"
         )
     rows: list[dict[str, Any]] = []
+    workflow = build_support_workflow(roles)
     for sc in scenarios:
         result, secs = run_one(gateway, sc, roles, profile)
         expected = sc.ground_truth.expected_final.decision
@@ -112,11 +114,14 @@ def evaluate_profile(
         found = violations(result)
         outcome = check_outcome(sc.ground_truth.expected_final, result.outputs)
         ok = outcome.decision_ok
+        run = result.to_run(scenario_id=sc.scenario_id, final_correct=outcome.correct)
+        provenance = check_provenance(run, workflow)
         if not quiet:
             cat_text = cat if cat == sc.category else f"{cat}(want {sc.category})"
             problems = list(found)
             if outcome.facts_missing:
                 problems.append(f"reply lacks {outcome.facts_missing}")
+            problems += [f"provenance: {p}" for p in provenance]
             print(
                 f"{sc.scenario_id:<10} {expected:<9} {got:<9} {'Y' if ok else 'N':<3} "
                 f"{'Y' if outcome.correct else 'N':<6}{cat_text:<17} {secs:5.1f}  "
@@ -124,7 +129,6 @@ def evaluate_profile(
             )
             if verbose and (not ok or len(scenarios) == 1):
                 print(explain(result))
-        run = result.to_run(scenario_id=sc.scenario_id, final_correct=outcome.correct)
         if trace:
             print(format_tree(run) + "\n")
         rows.append(
@@ -140,6 +144,7 @@ def evaluate_profile(
                 "completed": result.status == "ok",
                 "seconds": round(secs, 2),
                 "violations": found,
+                "provenance_problems": provenance,
                 "result": result.model_dump(mode="json", exclude={"spans"}),
                 "run": run.model_dump(mode="json"),  # the full trace (P2-T1)
             }
@@ -156,6 +161,7 @@ def evaluate_profile(
         "category_correct": sum(r["category_expected"] == r["category_got"] for r in rows),
         "completed": sum(r["completed"] for r in rows),
         "with_violations": sum(bool(r["violations"]) for r in rows),
+        "provenance_exact": sum(not r["provenance_problems"] for r in rows),
         "seconds": round(sum(r["seconds"] for r in rows), 1),
         "rows": rows,
     }
@@ -173,6 +179,7 @@ def print_summary(s: dict[str, Any]) -> None:
     print(f"router category   : {s['category_correct']}/{n}")
     print(f"runs completed    : {s['completed']}/{n}  (no step failed)")
     print(f"tickets with contract violations: {s['with_violations']}/{n}")
+    print(f"provenance exact  : {s['provenance_exact']}/{n}  (refs match declared data flow)")
     print(f"full step records : reports/clean_eval_{s['profile']}.json")
     print("PASS" if s["accuracy"] >= TARGET else "FAIL")
 

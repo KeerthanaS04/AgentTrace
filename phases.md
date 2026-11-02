@@ -120,7 +120,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
 
 - [x] **P2-T1: `@traced` + `TraceContext`.** Record input, output, timings, tokens, cost, model, params, explanation; stable `node_id`.
   - *Done when:* a run yields a full `Run` with spans for all 5 agents + nested tool/retrieval/LLM spans.
-- [ ] **P2-T2: Provenance via `Ref`.** Inputs carry their producer span; no inferring edges from execution order.
+- [x] **P2-T2: Provenance via `Ref`.** Inputs carry their producer span; no inferring edges from execution order.
   - *Done when:* clean-run `input_refs` exactly match the declared data flow (tested).
 - [ ] **P2-T3: Trace store.** SQLAlchemy models/repos for runs, spans, scores, diagnoses, replays; CLI `agenttrace run --scenario X`.
   - *Done when:* runs persist and reload byte-identically; queries by run/node/scenario work.

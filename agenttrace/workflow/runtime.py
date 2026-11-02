@@ -155,6 +155,16 @@ def step_id(run_id: str, step: str) -> str:
     return f"{run_id}/{step}"
 
 
+def _mint(
+    minted: dict[tuple[str, str], Ref], run_id: str, owner: str, values: Mapping[str, Any]
+) -> None:
+    """Create the Ref for each value at the moment its producer emits it."""
+    for key, value in values.items():
+        minted[(owner, key)] = Ref(
+            span_id=step_id(run_id, owner), key=key, content_hash=content_hash(value)
+        )
+
+
 def _copy_json(value: Any, what: str) -> Any:
     try:
         return json.loads(json.dumps(value))
@@ -260,11 +270,17 @@ class Workflow:
 
         values: dict[str, dict[str, Any]] = {INPUT_STEP: _copy_json(dict(inputs), "workflow input")}
         records: dict[str, StepRecord] = {}
+        # (producer, key) -> the Ref minted when the value was produced. Consumers get
+        # their refs from here via their declared sources, never by recomputing them.
+        minted: dict[tuple[str, str], Ref] = {}
+        _mint(minted, run_id, INPUT_STEP, values[INPUT_STEP])
         with TraceContext(run_id) as trace:
             trace.instant("message", INPUT_STEP, agent=self.name, output=values[INPUT_STEP])
             for name in self.order:
                 step = self.steps[name]
-                records[name] = self._run_step(step, run_id, values, records, resources, trace)
+                records[name] = self._run_step(
+                    step, run_id, values, minted, records, resources, trace
+                )
 
         outputs: dict[str, Any] = {}
         for key, src in self.outputs.items():
@@ -287,6 +303,7 @@ class Workflow:
         step: Step,
         run_id: str,
         values: dict[str, dict[str, Any]],
+        minted: dict[tuple[str, str], Ref],
         records: Mapping[str, StepRecord],
         resources: Mapping[str, Any] | None,
         trace: TraceContext,
@@ -313,11 +330,8 @@ class Workflow:
         refs: list[Ref] = []
         for key, src in step.inputs.items():
             owner = INPUT_STEP if isinstance(src, FromInput) else src.step
-            value = _copy_json(values[owner][src.key], f"input {key!r}")
-            resolved[key] = value
-            refs.append(
-                Ref(span_id=step_id(run_id, owner), key=src.key, content_hash=content_hash(value))
-            )
+            resolved[key] = _copy_json(values[owner][src.key], f"input {key!r}")
+            refs.append(minted[(owner, src.key)].model_copy(update={"input_key": key}))
 
         ctx = StepContext(
             run_id=run_id, step=step.name, params=step.params, resources=resources or {}
@@ -354,6 +368,7 @@ class Workflow:
             span.output = output
             span.explanation = result.explanation
         values[step.name] = output
+        _mint(minted, run_id, step.name, output)
         return StepRecord(
             **base,
             status="ok",
