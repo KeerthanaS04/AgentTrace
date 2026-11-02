@@ -36,6 +36,7 @@
 | 2026-11-01 | Agents under test | No OpenRouter key, so all agent roles run on NVIDIA's free tier (see §2). Each agent asks its model for JSON that includes its own rationale / cited evidence / confidence, so the `Explanation` comes from the model that decided | Claude |
 | 2026-11-01 | Retrieval design | The model writes 1–3 queries; BM25 does the search (reproducible). The ticket text is also searched, plus a standing "escalation rules" query whose docs are never cut by the 6-doc cap | Claude |
 | 2026-11-02 | Per-agent model config | `config/agents.yaml` holds named profiles (step -> role, with a `default_role`); `config/models.yaml` maps role -> model. The runner takes `--profile` (one or several), never a model name. Profiles are validated against the models config at startup | Claude |
+| 2026-11-02 | Final-outcome check (`final_correct`) | `agenttrace/evaluation/outcome.py`: correct = expected decision AND every `required_facts` string in the reply. No LLM. Matching normalizes NFKC, all dash variants, curly quotes, `&`/"and", case, and whitespace; facts must stand alone ("79" matches "$79.00", not "$179" / "79.50" / "O1079"); ordinals ("31st") and a plural "s" are allowed. Synonyms are **not** ("30-day" does not match "30 days"): a fact is an exact KB phrase. Amounts and `escalate_to` are not graded separately; the escalation team is a required fact where the KB names one | Claude |
 | 2026-11-01 | Runtime design | Sync, sequential (gateway is sync). Each step binds every input explicitly to `FromInput(key)` or `FromStep(step, key)`; the graph is checked at construction (input/output keys, unknown steps, cycles). Each step record carries `input_refs` (producer step id + content hash), so P2-T2 provenance comes from declared wiring, not execution order. Step ids are deterministic (`{run_id}/{step}`) so replays line up. Values are JSON-copied across steps (no shared mutation). An agent exception becomes a step `error`; only its downstream steps are skipped | Claude |
 | | Team size / submission format | | |
 | 2026-10-28 | Non-Meta models | Include NVIDIA + OSS as judges and agents under test, so results hold up beyond Meta's own models (still check the rules) | User |
@@ -170,6 +171,15 @@
 - Replies write "5‑7" with a non-breaking hyphen (U+2011), so a plain `"5-7 business days"` match would miss it. The checker must normalize dashes (and whitespace, per `normalize_ws`).
 - One Writer run said "5-10 business days" (the policy says 5-7): a natural hallucination. The checker's required facts will catch it.
 - The Policy Agent sometimes gives the right decision with the wrong amount (it missed KB-REF-009's $6.95 return fee on a $48 order). Decision accuracy doesn't grade amounts yet.
+- **Handled in P1-T7:** all three points above are covered by `check_outcome` and its tests (U+2011 normalization, "5-10" failing "5-7 business days"). Amounts are still graded only where a ticket lists the amount as a required fact.
+
+### 2026-11-02 · P1-T7 · Right decision, wrong reply: what the outcome check catches on the saved runs
+- Lightning's replies often say refunds take "5-10 business days"; KB-REF-007 says 5-7 (a natural hallucination, in the Writer).
+- Ultra's clean-06 escalated a fraud-review account to a "Support Supervisor team"; KB-ACC-003 says Trust & Safety. Decision right, routing wrong.
+- Lightning's clean-19 approved correctly but never said why (the holiday window to January 31).
+- Bolt often says the refund time "is not specified in the provided documents", a sign the timing doc wasn't retrieved.
+- These are decision-correct but outcome-wrong runs: exactly the "silent" errors the debugger must localize later.
+- Measured (cached, all 20 tickets): decision vs. final is Lightning 19 vs. 17, Ultra 20 vs. 18, Bolt 16 vs. 12. clean-01 fails final on all three models (Lightning and Ultra say "5-10 business days"; Bolt says the timing "is not specified"), so the refund-timing claim is the most common right-decision error.
 
 ---
 
@@ -242,6 +252,7 @@ Each run is `python tasks.py clean` (agent_default, thinking off):
 | Date | Metric | Value | 95% CI | n | Config / commit |
 |---|---|---|---|---|---|
 | 2026-11-02 | Clean-ticket accuracy by model (dev set) | Lightning 95%, Ultra 100%, Bolt 80% | — (dev set) | 20 each | profiles default / ultra / bolt; P1-T6 branch |
+| 2026-11-02 | Clean-ticket final outcome (decision + required facts; dev set) | Lightning 17/20 (85%), Ultra 18/20 (90%), Bolt 12/20 (60%) | — (dev set) | 20 each | `python tasks.py clean --profile default ultra bolt -q`; P1-T7 branch |
 | 2026-11-01 | Clean-ticket decision accuracy (dev set) | 19/20 = 95% | — (dev set, not a headline number) | 20 | agent_default = nemotron-3.5-lightning, thinking off; P1-T5 branch |
 
 ---
