@@ -21,9 +21,13 @@ SpanKind = Literal["agent", "llm", "tool", "retrieval", "decision", "message"]
 class Ref(StrictModel):
     """Provenance-carrying pointer to a value produced by an earlier span."""
 
+    # The producer span and the output key it produced the value under.
     span_id: NonEmptyStr
     key: NonEmptyStr
     content_hash: NonEmptyStr
+    # The consumer's input this value was bound to (e.g. writer input "decision"), so
+    # data flow is exact per input, not just per pair of spans. None if not bound.
+    input_key: str | None = None
 
 
 class Explanation(StrictModel):

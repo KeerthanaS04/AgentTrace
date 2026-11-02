@@ -165,6 +165,7 @@ def test_clean_eval_reports_final_outcome(tmp_path: Path, monkeypatch: pytest.Mo
     assert rows["clean-02"]["correct"] and not rows["clean-02"]["final_correct"]
     assert rows["clean-02"]["facts_missing"] == ["10%"]
     assert (summary["correct"], summary["final_correct"]) == (2, 1)
+    assert summary["provenance_exact"] == 2  # P2-T2: refs match the declared data flow
     assert (tmp_path / "clean_eval_default.json").exists()
 
 
