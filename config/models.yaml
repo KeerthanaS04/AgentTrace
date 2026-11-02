@@ -50,7 +50,8 @@ providers:
     supports_json_mode: true    # verified 2026-11-01: response_format json_object accepted
     # Nemotron models think before answering unless the chat template turns it off:
     # chat_template_kwargs {enable_thinking: false} cut ~500 -> ~45 output tokens, 5s -> 1.3s.
-    timeout_s: 120
+    # Mistral Large 4 calls can exceed 120s on the free tier (measured read timeouts).
+    timeout_s: 240
     max_retries: 4
     # Free build.nvidia.com tier: no per-token charge (request-limited), so priced at 0.
     models:
@@ -120,10 +121,19 @@ roles:
     params: {temperature: 0, max_tokens: 1024, chat_template_kwargs: {enable_thinking: false}}
 
   agent_alt_1:
-    # Different model family (Mistral). Slow (~30s per call on the free tier).
+    # Different model family (Mistral). Always reasons (enable_thinking: false still reasons;
+    # reasoning_effort: none -> HTTP 400), 30-60s per call on the free tier. Needs room for
+    # reasoning: at max_tokens 1024 a call spent 1023 tokens thinking and returned nothing.
     provider: nvidia
     model: mistralai/mistral-large-4-1t-a52b
-    params: {temperature: 0, max_tokens: 1024}
+    params: {temperature: 0, max_tokens: 4096}
+
+  agent_alt_3:
+    # Largest Nemotron (550B MoE), thinking off: ~2s per call. Also the judge_nvidia model,
+    # so don't judge this profile's runs with judge_nvidia (self-evaluation bias).
+    provider: nvidia
+    model: nvidia/nemotron-3-ultra-550b-a55b
+    params: {temperature: 0, max_tokens: 1024, chat_template_kwargs: {enable_thinking: false}}
 
   agent_alt_2:
     # Small, fast Nemotron: the "weaker agent" for model-agnostic evaluation.

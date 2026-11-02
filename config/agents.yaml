@@ -1,0 +1,33 @@
+# Which model role each support agent uses, grouped into named profiles.
+#
+# Roles are defined in config/models.yaml (role -> provider, model, params).
+# To run the workflow on a different model, pick or edit a profile here; no code changes.
+#   python tasks.py clean --profile bolt
+#   python tasks.py clean --profile default ultra bolt -q   # side-by-side comparison
+#
+# `default_role` applies to every step not listed under `steps`.
+# Steps: router, retriever, tool_agent, policy, writer.
+
+profiles:
+  default:
+    description: Every agent on agent_default (Nemotron 3.5 Lightning, thinking off).
+    default_role: agent_default
+
+  ultra:
+    description: Every agent on agent_alt_3 (Nemotron 3 Ultra 550B, thinking off), the largest model.
+    default_role: agent_alt_3
+
+  bolt:
+    description: Every agent on agent_alt_2 (Nemotron 3.5 Bolt), a small, fast model.
+    default_role: agent_alt_2
+
+  mistral:
+    description: Every agent on agent_alt_1 (Mistral Large 4), a different model family. Slow
+      (30-60s per call on the free tier, ~2 hours for all 20 tickets); try --only first.
+    default_role: agent_alt_1
+
+  mixed:
+    description: Small model for the simple steps, default model for the decision.
+    default_role: agent_alt_2
+    steps:
+      policy: agent_default

@@ -35,6 +35,7 @@
 | 2026-11-01 | Tool design | Tools compute day counts from the fixture DB's `as_of` date (never the real clock, never the LLM). `refund_api` has `quote` (check only) and `issue` modes; the Tool Agent uses `quote`, since it runs before the Policy Agent decides | Claude |
 | 2026-11-01 | Agents under test | No OpenRouter key, so all agent roles run on NVIDIA's free tier (see §2). Each agent asks its model for JSON that includes its own rationale / cited evidence / confidence, so the `Explanation` comes from the model that decided | Claude |
 | 2026-11-01 | Retrieval design | The model writes 1–3 queries; BM25 does the search (reproducible). The ticket text is also searched, plus a standing "escalation rules" query whose docs are never cut by the 6-doc cap | Claude |
+| 2026-11-02 | Per-agent model config | `config/agents.yaml` holds named profiles (step -> role, with a `default_role`); `config/models.yaml` maps role -> model. The runner takes `--profile` (one or several), never a model name. Profiles are validated against the models config at startup | Claude |
 | 2026-11-01 | Runtime design | Sync, sequential (gateway is sync). Each step binds every input explicitly to `FromInput(key)` or `FromStep(step, key)`; the graph is checked at construction (input/output keys, unknown steps, cycles). Each step record carries `input_refs` (producer step id + content hash), so P2-T2 provenance comes from declared wiring, not execution order. Step ids are deterministic (`{run_id}/{step}`) so replays line up. Values are JSON-copied across steps (no shared mutation). An agent exception becomes a step `error`; only its downstream steps are skipped | Claude |
 | | Team size / submission format | | |
 | 2026-10-28 | Non-Meta models | Include NVIDIA + OSS as judges and agents under test, so results hold up beyond Meta's own models (still check the rules) | User |
@@ -142,6 +143,10 @@
 - **What happened:** Nemotron reasons by default. `chat_template_kwargs: {enable_thinking: false}` cut a policy answer from ~507 to 43 output tokens (5.5s → 1.3s), still correct. `reasoning_effort: low` had no effect. With thinking on and `max_tokens: 4096`, some agent calls spent all 4096 tokens reasoning and returned nothing.
 - **Action:** agents run with thinking off. The judge keeps thinking on (revisit in P6-T1).
 
+### 2026-11-02 · P1-T6 · Mistral Large 4 always reasons, and is slow on the free tier
+- **What happened:** `enable_thinking: false` still reasoned (34s, 195 tokens); default took 62s; `reasoning_effort: none` → HTTP 400. At `max_tokens: 1024` a call spent 1023 tokens reasoning and returned nothing; two calls hit the 120s read timeout.
+- **Action:** `agent_alt_1` (Mistral) gets `max_tokens: 4096`; NVIDIA `timeout_s` raised to 240. The `mistral` profile stays (a different model family matters for credibility) but a full 20-ticket run is ~2 hours, so it's for spot checks. Added `agent_alt_3` = Nemotron Ultra (thinking off, ~2s) as the third fast model. Ultra is also `judge_nvidia`, so `ultra` runs must not be judged by `judge_nvidia`.
+
 ### 2026-10-29 · P0-T4 · Still unverified in `config/models.yaml`
 - **What happened:** the first config was written without dashboard access.
 - **Why it matters:** the gateway refuses `TODO_VERIFY` roles, so only `judge_deep` (Muse Wonder) is callable until these are filled in.
@@ -198,6 +203,19 @@ Each run is `python tasks.py clean` (agent_default, thinking off):
 - **clean-18 is left as a natural error:** the model claims a Jan 2 delivery is "between Nov 15 and Dec 31". The right policy and data were provided. No ticket-specific prompt rule was added for it.
 - **Caveat:** prompts were adjusted while looking at these 20 tickets, so they're a dev set; the honest held-out number comes from the Phase 4 scenarios.
 
+### 2026-11-02 · P1-T6 · Same workflow, three models (config only): where they fail differs
+`python tasks.py clean --profile default ultra bolt -q` (user's run):
+
+| Profile | Model | Accuracy | Completed | Contract violations |
+|---|---|---|---|---|
+| default | Nemotron 3.5 Lightning (30B MoE) | 19/20 (95%) | 20/20 | 1/20 |
+| ultra | Nemotron 3 Ultra (550B MoE), thinking off | 20/20 (100%) | 20/20 | 0/20 |
+| bolt | Nemotron 3.5 Bolt (small) | 16/20 (80%) | 18/20 | 8/20 |
+
+- **Different failure types per model.** Lightning's one miss (clean-18) is a reasoning slip. Bolt's misses are mostly *format* failures: 6 runs cited mangled doc IDs (`": "`, `".KB-REF-002"`, a doc title); 2 Tool Agent runs never produced valid JSON (one truncated mid-string, one missing fields) after 2 repairs, so no decision. Bolt also shares the clean-18 slip and gets clean-10 wrong.
+- **Why it matters for later phases:** these are *natural* faults (not injected), useful for checking that diagnosis finds the right node on real failures. The contract checks caught every Bolt citation error.
+- Bolt's settings were left unchanged (no tuning per model), so the comparison is like-for-like.
+
 ---
 
 ## 7. Diagnosis Errors
@@ -223,6 +241,7 @@ Each run is `python tasks.py clean` (agent_default, thinking off):
 
 | Date | Metric | Value | 95% CI | n | Config / commit |
 |---|---|---|---|---|---|
+| 2026-11-02 | Clean-ticket accuracy by model (dev set) | Lightning 95%, Ultra 100%, Bolt 80% | — (dev set) | 20 each | profiles default / ultra / bolt; P1-T6 branch |
 | 2026-11-01 | Clean-ticket decision accuracy (dev set) | 19/20 = 95% | — (dev set, not a headline number) | 20 | agent_default = nemotron-3.5-lightning, thinking off; P1-T5 branch |
 
 ---

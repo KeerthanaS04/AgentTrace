@@ -72,7 +72,7 @@ def clean(*args: str) -> int:
     return _run("uv", "run", "python", "-m", "agenttrace.workflow.clean_eval", *args)
 
 
-# Tasks that forward extra command-line arguments (e.g. `clean --role agent_alt_2`).
+# Tasks that forward extra command-line arguments (e.g. `clean --profile bolt`).
 WITH_ARGS: dict[str, Callable[..., int]] = {"clean": clean}
 
 TASKS: dict[str, Callable[..., int]] = {
