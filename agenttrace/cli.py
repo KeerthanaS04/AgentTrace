@@ -72,6 +72,7 @@ def build_parser() -> argparse.ArgumentParser:
     graph.add_argument(
         "--weight", choices=["duration_s", "cost_usd", "tokens"], default="duration_s"
     )
+    graph.add_argument("--json", type=Path, help="also write the UI graph JSON (React Flow)")
 
     diff = with_db(sub.add_parser("diff", help="align two stored runs span by span"))
     diff.add_argument("run_a")
@@ -219,14 +220,17 @@ def cmd_graph(args: argparse.Namespace) -> int:
         paths_to_final,
         topological_order,
     )
+    from agenttrace.graph.ui import to_ui_graph
     from agenttrace.store import TraceStore
+    from agenttrace.workflow.contracts import CONTRACTS
 
     with TraceStore.open(args.db) as store:
         for run_id in (args.run_id, args.diff):
             if run_id and not store.has_run(run_id):
                 print(f"no stored run {run_id!r} (see `agenttrace runs`)")
                 return 2
-        g = build_graph(store.get_run(args.run_id))
+        run = store.get_run(args.run_id)
+        g = build_graph(run, contracts=CONTRACTS)
         other = build_graph(store.get_run(args.diff)) if args.diff else None
 
     def local(span_id: str) -> str:
@@ -254,6 +258,11 @@ def cmd_graph(args: argparse.Namespace) -> int:
         d = first_divergence(g, other)
         print(f"\nfirst divergence vs {args.diff}: ", end="")
         print("none (same outputs everywhere)" if d is None else f"{d.local_id} ({d.reason})")
+    if args.json:
+        doc = to_ui_graph(g, run)
+        args.json.parent.mkdir(parents=True, exist_ok=True)
+        args.json.write_text(doc.model_dump_json(indent=1), encoding="utf-8")
+        print(f"\nUI graph JSON: {len(doc.nodes)} nodes, {len(doc.edges)} edges -> {args.json}")
     return 0
 
 

@@ -7,7 +7,7 @@ Nodes are spans, keyed by span_id, with attributes:
     (recorded order), agent, kind, model, status ("ok" / "error" / "skipped"), error,
     parent, started_at, duration_s, tokens_in, tokens_out, cost_usd, output_hash (ignores
     cache-only fields), contract (NodeContract or None), and placeholders anomaly /
-    verdict (None until diagnosis fills them in).
+    verdict / role (None until diagnosis fills them in).
 
 `g.graph["final"]` lists the spans the run's result comes from: the producers of
 `run.final_output` (e.g. router, policy, writer), or, when that is unknown (foreign
@@ -78,6 +78,7 @@ def build_graph(
             contract=contracts.get(span.node_id),
             anomaly=None,
             verdict=None,
+            role=None,  # "root_cause" / "propagated", set by diagnosis (P7)
         )
     for span in run.spans:
         for ref in span.input_refs:

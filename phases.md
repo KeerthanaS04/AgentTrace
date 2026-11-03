@@ -140,7 +140,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
   - *Done when:* tested on hand-built graphs.
 - [x] **P3-T3: Logical-node alignment.** Map spans across runs by `node_id`.
   - *Done when:* original vs. replay yields the correct changed/unchanged set.
-- [ ] **P3-T4: UI serialization.** Graph JSON (nodes, edges, status colors, layout hints) for React Flow.
+- [x] **P3-T4: UI serialization.** Graph JSON (nodes, edges, status colors, layout hints) for React Flow.
   - *Done when:* JSON validates against the UI schema.
 
 ---
