@@ -55,14 +55,24 @@ class Injector:
 # ---------------------------------------------------------------- helpers
 
 
+def _step(node: Any, key: str, path: str) -> Any:
+    """One step of a dotted path: a dict key, or a list index ("items.0")."""
+    if isinstance(node, dict) and key in node:
+        return node[key]
+    if isinstance(node, list) and key.isdigit() and int(key) < len(node):
+        return node[int(key)]
+    raise FaultParamError(f"path {path!r}: no key {key!r}")
+
+
 def _walk(value: Value, path: str) -> tuple[dict[str, Any], str]:
-    """The dict holding the last key of a dotted path, and that key."""
+    """The dict holding the last key of a dotted path, and that key.
+
+    Intermediate steps may index lists, e.g. "order.items.0.final_sale".
+    """
     *parents, last = path.split(".")
     node: Any = value
     for key in parents:
-        if not isinstance(node, dict) or key not in node:
-            raise FaultParamError(f"path {path!r}: no key {key!r}")
-        node = node[key]
+        node = _step(node, key, path)
     if not isinstance(node, dict) or last not in node:
         raise FaultParamError(f"path {path!r}: no key {last!r}")
     return node, last
