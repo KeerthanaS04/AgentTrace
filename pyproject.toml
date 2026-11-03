@@ -25,6 +25,8 @@ dev = [
     "types-pyyaml>=6.0",
     "pre-commit>=3.7",
     "types-networkx>=3.6.1.20261031",
+    "jsonschema>=4.20",
+    "types-jsonschema>=4.26.0.20261006",
 ]
 
 [build-system]

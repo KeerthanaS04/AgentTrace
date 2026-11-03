@@ -1,0 +1,426 @@
+{
+  "$defs": {
+    "LegendItem": {
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "title": "Color",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "root_cause",
+            "propagated",
+            "suspicious",
+            "error",
+            "skipped",
+            "ok"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "color",
+        "label"
+      ],
+      "title": "LegendItem",
+      "type": "object"
+    },
+    "Position": {
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "Position",
+      "type": "object"
+    },
+    "UiEdge": {
+      "additionalProperties": false,
+      "properties": {
+        "animated": {
+          "title": "Animated",
+          "type": "boolean"
+        },
+        "data": {
+          "$ref": "#/$defs/UiEdgeData"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "style": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Style",
+          "type": "object"
+        },
+        "target": {
+          "title": "Target",
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "smoothstep",
+            "straight"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "source",
+        "target",
+        "type",
+        "animated",
+        "style",
+        "data"
+      ],
+      "title": "UiEdge",
+      "type": "object"
+    },
+    "UiEdgeData": {
+      "additionalProperties": false,
+      "properties": {
+        "bindings": {
+          "description": "'producer_key -> input_key' for each value passed.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Bindings",
+          "type": "array"
+        },
+        "kind": {
+          "enum": [
+            "data",
+            "nested"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "UiEdgeData",
+      "type": "object"
+    },
+    "UiNode": {
+      "additionalProperties": false,
+      "properties": {
+        "data": {
+          "$ref": "#/$defs/UiNodeData"
+        },
+        "height": {
+          "title": "Height",
+          "type": "integer"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "position": {
+          "$ref": "#/$defs/Position"
+        },
+        "type": {
+          "enum": [
+            "agent",
+            "llm",
+            "tool",
+            "retrieval",
+            "decision",
+            "message"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "width": {
+          "title": "Width",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "position",
+        "width",
+        "height",
+        "data"
+      ],
+      "title": "UiNode",
+      "type": "object"
+    },
+    "UiNodeData": {
+      "additionalProperties": false,
+      "properties": {
+        "agent": {
+          "title": "Agent",
+          "type": "string"
+        },
+        "color": {
+          "title": "Color",
+          "type": "string"
+        },
+        "contract": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Contract"
+        },
+        "cost_usd": {
+          "default": 0.0,
+          "title": "Cost Usd",
+          "type": "number"
+        },
+        "display_status": {
+          "enum": [
+            "root_cause",
+            "propagated",
+            "suspicious",
+            "error",
+            "skipped",
+            "ok"
+          ],
+          "title": "Display Status",
+          "type": "string"
+        },
+        "duration_ms": {
+          "default": 0.0,
+          "title": "Duration Ms",
+          "type": "number"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        },
+        "is_final": {
+          "title": "Is Final",
+          "type": "boolean"
+        },
+        "kind": {
+          "enum": [
+            "agent",
+            "llm",
+            "tool",
+            "retrieval",
+            "decision",
+            "message"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "layer": {
+          "description": "Column: causal depth of the step (0 = workflow input).",
+          "title": "Layer",
+          "type": "integer"
+        },
+        "local_id": {
+          "title": "Local Id",
+          "type": "string"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "node_id": {
+          "title": "Node Id",
+          "type": "string"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent"
+        },
+        "row": {
+          "description": "Position within the column, top to bottom.",
+          "title": "Row",
+          "type": "integer"
+        },
+        "tokens_in": {
+          "default": 0,
+          "title": "Tokens In",
+          "type": "integer"
+        },
+        "tokens_out": {
+          "default": 0,
+          "title": "Tokens Out",
+          "type": "integer"
+        },
+        "verdict": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Verdict"
+        }
+      },
+      "required": [
+        "label",
+        "node_id",
+        "local_id",
+        "kind",
+        "agent",
+        "display_status",
+        "color",
+        "is_final",
+        "layer",
+        "row"
+      ],
+      "title": "UiNodeData",
+      "type": "object"
+    }
+  },
+  "$id": "https://agenttrace.local/schema/run-graph.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "edges": {
+      "items": {
+        "$ref": "#/$defs/UiEdge"
+      },
+      "title": "Edges",
+      "type": "array"
+    },
+    "final_correct": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Final Correct"
+    },
+    "final_spans": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Final Spans",
+      "type": "array"
+    },
+    "legend": {
+      "items": {
+        "$ref": "#/$defs/LegendItem"
+      },
+      "title": "Legend",
+      "type": "array"
+    },
+    "nodes": {
+      "items": {
+        "$ref": "#/$defs/UiNode"
+      },
+      "title": "Nodes",
+      "type": "array"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "scenario_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Scenario Id"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "workflow_version": {
+      "title": "Workflow Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "workflow_version",
+    "final_spans",
+    "nodes",
+    "edges",
+    "legend"
+  ],
+  "title": "AgentTrace run graph (React Flow)",
+  "type": "object"
+}
