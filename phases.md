@@ -124,7 +124,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
   - *Done when:* clean-run `input_refs` exactly match the declared data flow (tested).
 - [x] **P2-T3: Trace store.** SQLAlchemy models/repos for runs, spans, scores, diagnoses, replays; CLI `agenttrace run --scenario X`.
   - *Done when:* runs persist and reload byte-identically; queries by run/node/scenario work.
-- [ ] **P2-T4: Export/import.** JSON (optional OTel-style).
+- [x] **P2-T4: Export/import.** JSON (optional OTel-style).
   - *Done when:* export → import yields an identical `Run`.
 - [ ] **P2-T5: Integrity checks.** No orphan refs, no cycles, consistent timestamps.
   - *Done when:* corrupted-trace fixtures are rejected.
