@@ -8,6 +8,9 @@
     agenttrace export clean-07-default-r1 -o run.json   # one or more runs to a JSON file
     agenttrace export --scenario clean-07 --otel -o otel.json   # OTLP/JSON instead
     agenttrace import run.json                    # load runs (native or OTLP) into the store
+    agenttrace graph clean-07-default-r1          # final spans, causal order, critical path
+    agenttrace graph RUN --from tool_agent.order_lookup   # its paths to the final output
+    agenttrace graph RUN_A --diff RUN_B           # where two runs first diverge
 
 The store is SQLite at .cache/agenttrace.db (override with --db or $AGENTTRACE_DB).
 """
@@ -60,6 +63,14 @@ def build_parser() -> argparse.ArgumentParser:
     imp = with_db(sub.add_parser("import", help="load runs from a JSON file into the store"))
     imp.add_argument("file", type=Path)
     imp.add_argument("--replace", action="store_true", help="overwrite runs already stored")
+
+    graph = with_db(sub.add_parser("graph", help="causal-graph queries on a stored run"))
+    graph.add_argument("run_id")
+    graph.add_argument("--from", dest="source", help="span (local id) to trace to the final")
+    graph.add_argument("--diff", help="another run: report where the two first diverge")
+    graph.add_argument(
+        "--weight", choices=["duration_s", "cost_usd", "tokens"], default="duration_s"
+    )
 
     for name in NOT_YET:
         sub.add_parser(name)
@@ -193,6 +204,53 @@ def cmd_import(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_graph(args: argparse.Namespace) -> int:
+    from agenttrace.graph import (
+        build_graph,
+        critical_path,
+        final_spans,
+        first_divergence,
+        paths_to_final,
+        topological_order,
+    )
+    from agenttrace.store import TraceStore
+
+    with TraceStore.open(args.db) as store:
+        for run_id in (args.run_id, args.diff):
+            if run_id and not store.has_run(run_id):
+                print(f"no stored run {run_id!r} (see `agenttrace runs`)")
+                return 2
+        g = build_graph(store.get_run(args.run_id))
+        other = build_graph(store.get_run(args.diff)) if args.diff else None
+
+    def local(span_id: str) -> str:
+        return str(g.nodes[span_id]["local_id"])
+
+    agents = [n for n in topological_order(g) if g.nodes[n]["parent"] is None]
+    print(f"run {args.run_id}: {g.number_of_nodes()} spans, {g.number_of_edges()} edges")
+    print(f"final spans   : {', '.join(local(n) for n in final_spans(g))}")
+    print(f"causal order  : {' -> '.join(local(n) for n in agents)}  (top-level spans)")
+    cp = critical_path(g, weight=args.weight)
+    print(
+        f"critical path : {' -> '.join(local(n) for n in cp.spans)}  ({args.weight} {cp.total:g})"
+    )
+
+    if args.source:
+        by_local = {local(n): n for n in g}
+        if args.source not in by_local:
+            print(f"no span {args.source!r} in {args.run_id}")
+            return 2
+        paths = paths_to_final(g, by_local[args.source])
+        print(f"\npaths from {args.source} to the final output: {len(paths)}")
+        for path in paths:
+            print("  " + " -> ".join(local(n) for n in path))
+    if other is not None:
+        d = first_divergence(g, other)
+        print(f"\nfirst divergence vs {args.diff}: ", end="")
+        print("none (same outputs everywhere)" if d is None else f"{d.local_id} ({d.reason})")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command in NOT_YET:
@@ -204,6 +262,7 @@ def main(argv: list[str] | None = None) -> int:
         "show": cmd_show,
         "export": cmd_export,
         "import": cmd_import,
+        "graph": cmd_graph,
     }[args.command]
     return handler(args)
 

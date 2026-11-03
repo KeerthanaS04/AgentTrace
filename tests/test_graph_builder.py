@@ -55,7 +55,12 @@ def test_topology_is_the_same_across_runs_and_models(tmp_path: Path) -> None:
 def test_every_span_is_a_node_with_attributes(run: Run) -> None:
     g = build_graph(run, contracts=CONTRACTS)
     assert set(g.nodes) == {s.span_id for s in run.spans}
-    assert g.graph == {"run_id": "r1", "workflow_version": "support@1"}
+    assert g.graph == {
+        "run_id": "r1",
+        "workflow_version": "support@1",
+        "final": ["r1/router", "r1/policy", "r1/writer"],  # producers of final_output
+    }
+    assert g.nodes["r1/tool_agent.llm#2"]["local_id"] == "tool_agent.llm#2"
     policy = g.nodes["r1/policy"]
     assert (policy["node_id"], policy["agent"], policy["kind"]) == ("policy", "policy", "agent")
     assert policy["status"] == "ok" and policy["error"] is None

@@ -136,7 +136,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
 
 - [x] **P3-T1: Graph builder.** `networkx.DiGraph`: nodes = spans, edges = `input_refs`, with agent/kind/contract attributes.
   - *Done when:* graph matches declared topology on clean runs.
-- [ ] **P3-T2: Graph queries.** `ancestors`, `descendants`, `topological_order`, `paths_to_final`, `critical_path`, `first_divergence`.
+- [x] **P3-T2: Graph queries.** `ancestors`, `descendants`, `topological_order`, `paths_to_final`, `critical_path`, `first_divergence`.
   - *Done when:* tested on hand-built graphs.
 - [ ] **P3-T3: Logical-node alignment.** Map spans across runs by `node_id`.
   - *Done when:* original vs. replay yields the correct changed/unchanged set.
