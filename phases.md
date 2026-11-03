@@ -126,7 +126,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
   - *Done when:* runs persist and reload byte-identically; queries by run/node/scenario work.
 - [x] **P2-T4: Export/import.** JSON (optional OTel-style).
   - *Done when:* export → import yields an identical `Run`.
-- [ ] **P2-T5: Integrity checks.** No orphan refs, no cycles, consistent timestamps.
+- [x] **P2-T5: Integrity checks.** No orphan refs, no cycles, consistent timestamps.
   - *Done when:* corrupted-trace fixtures are rejected.
 
 ---

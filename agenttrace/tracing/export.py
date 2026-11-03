@@ -28,6 +28,7 @@ from typing import Any
 
 from agenttrace.schemas.run import Run
 from agenttrace.schemas.span import Span, SpanKind
+from agenttrace.tracing.integrity import validate_run
 
 FORMAT_RUN = "agenttrace.run"
 FORMAT_RUNS = "agenttrace.runs"
@@ -87,13 +88,14 @@ def export_runs(runs: Sequence[Run], path: Path | str, *, otel: bool = False) ->
 
 
 def import_runs(path: Path | str) -> list[Run]:
+    """Runs from a file; each is schema-validated and integrity-checked (see integrity.py)."""
     try:
         data = json.loads(Path(path).read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise TraceFormatError(f"{path}: not JSON ({exc})") from exc
     if not isinstance(data, dict):
         raise TraceFormatError(f"{path}: expected a JSON object")
-    return runs_from_dict(data)
+    return [validate_run(run) for run in runs_from_dict(data)]
 
 
 # ---------------------------------------------------------------- OTLP/JSON

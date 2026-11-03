@@ -37,6 +37,7 @@ from agenttrace.store.models import (
     ScoreRow,
     SpanRow,
 )
+from agenttrace.tracing.integrity import validate_run
 
 DEFAULT_DB_PATH = Path(".cache") / "agenttrace.db"
 
@@ -108,7 +109,12 @@ class TraceStore:
     # ------------------------------------------------------------ runs
 
     def save_run(self, run: Run, *, replace: bool = False) -> None:
-        """Save a run and all its spans in one transaction."""
+        """Save a run and all its spans in one transaction.
+
+        The trace is integrity-checked first (orphan refs, cycles, timestamps); a broken
+        trace raises `TraceIntegrityError` and nothing is written.
+        """
+        validate_run(run)
         with self._session() as s:
             existing = s.get(RunRow, run.run_id)
             if existing is not None:
@@ -155,7 +161,7 @@ class TraceStore:
             ).all()
             data = json.loads(row.doc)
         data["spans"] = [json.loads(d) for d in docs]
-        return Run.model_validate(data)
+        return validate_run(Run.model_validate(data))
 
     def runs(self, *, scenario_id: str | None = None, replay_of: str | None = None) -> list[Run]:
         """Full runs, oldest first, optionally filtered by scenario or replay origin."""

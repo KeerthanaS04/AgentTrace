@@ -1,0 +1,13 @@
+{
+ "format": "agenttrace.run",
+ "version": 1,
+ "run": {
+  "run_id": "fx",
+  "workflow_version": "fixture@1",
+  "final_output": {
+   "z": 2
+  },
+  "created_at": "2026-11-03T10:00:00.000000Z",
+  "spans": []
+ }
+}
