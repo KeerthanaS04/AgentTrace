@@ -13,6 +13,8 @@ from pydantic import Field
 from agenttrace.schemas.base import NonEmptyStr, StrictModel
 
 TicketCategory = Literal["refund", "shipping", "account", "other"]
+# The support workflow's final decision. Public: the workflow itself uses it.
+Decision = Literal["approve", "deny", "escalate"]
 
 
 class Ticket(StrictModel):

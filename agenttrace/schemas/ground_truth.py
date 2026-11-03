@@ -11,13 +11,12 @@ from typing import Any, Literal
 from pydantic import Field, model_validator
 
 from agenttrace.schemas.base import NonEmptyStr, StrictModel
-from agenttrace.schemas.scenario import ScenarioInput
+from agenttrace.schemas.scenario import Decision, ScenarioInput
 
 # F0 control, F1 wrong retrieval, F2 empty retrieval, F3 wrong tool value,
 # F4 malformed tool response, F5 invalid decision, F6 hallucinated claim,
 # F7 multi-fault, F8 silent fault.
 FaultCode = Literal["F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8"]
-Decision = Literal["approve", "deny", "escalate"]
 
 
 class FaultInjection(StrictModel):

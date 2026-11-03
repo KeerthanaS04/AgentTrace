@@ -7,7 +7,7 @@ from typing import Any
 
 from pydantic import Field
 
-from agenttrace.schemas.ground_truth import Decision
+from agenttrace.schemas.scenario import Decision
 from agenttrace.workflow.agents.base import ExplainedReply, as_json, ask
 from agenttrace.workflow.runtime import AgentOutput, StepContext
 

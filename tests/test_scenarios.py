@@ -11,13 +11,12 @@ import pytest
 from agenttrace.faults import INJECTORS, FaultPlan
 from agenttrace.scenarios.generator import (
     EXCLUDED_BASES,
-    SCENARIOS_PATH,
     affected_steps,
     build_scenarios,
-    load_dataset,
     main,
     render,
 )
+from agenttrace.scenarios.ground_truth import SCENARIOS_PATH, load_dataset
 from agenttrace.schemas.ground_truth import FaultInjection, Scenario
 from agenttrace.workflow.clean_eval import load_scenarios
 from agenttrace.workflow.kb.loader import load_kb

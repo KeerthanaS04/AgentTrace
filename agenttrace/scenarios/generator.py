@@ -27,6 +27,7 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
+from agenttrace.scenarios.ground_truth import SCENARIOS_PATH
 from agenttrace.schemas.ground_truth import (
     ExpectedFinal,
     FaultCode,
@@ -39,7 +40,6 @@ from agenttrace.workflow.runtime import FromStep, Workflow
 from agenttrace.workflow.support import build_support_workflow
 
 ROOT = Path(__file__).resolve().parents[2]
-SCENARIOS_PATH = ROOT / "data" / "scenarios" / "scenarios.json"
 SEED = 20261103
 
 # Clean tickets used as bases. clean-05 and clean-18 are left out: the default model
@@ -368,11 +368,6 @@ def render(scenarios: list[Scenario]) -> str:
         "scenarios": [s.model_dump(mode="json") for s in scenarios],
     }
     return json.dumps(doc, indent=1, ensure_ascii=False) + "\n"
-
-
-def load_dataset(path: Path = SCENARIOS_PATH) -> list[Scenario]:
-    data = json.loads(path.read_text(encoding="utf-8"))
-    return [Scenario.model_validate(s) for s in data["scenarios"]]
 
 
 def coverage_table(scenarios: list[Scenario]) -> str:
