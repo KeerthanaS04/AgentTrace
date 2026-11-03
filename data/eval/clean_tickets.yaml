@@ -45,6 +45,8 @@
 - scenario_id: clean-06
   category: refund
   # KB-ACC-003: account suspended (fraud review) -> no refunds, escalate to Trust & Safety.
+  # The $219 refund is also over the $200 limit (KB-REF-005 -> supervisor), but KB-ESC-001's
+  # precedence rule (added 2026-11-03) says fraud review goes first.
   ticket: {ticket_id: T-0106, customer_id: C004, subject: Tablet refund,
     body: "I want to return the tablet from order O1006 for a refund. It's still sealed."}
   ground_truth: {fault_code: F0, expected_final: {decision: escalate, required_facts: ["Trust & Safety"]}}

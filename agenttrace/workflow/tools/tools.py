@@ -263,8 +263,17 @@ TOOLS: dict[str, ToolSpec] = {
 }
 
 
-def _record_tool(span: SpanBuilder, result: StrictModel) -> None:
-    span.output = result.model_dump(mode="json")
+# What a tool call hands back: its typed result, or (only under fault injection, P4) the
+# raw JSON a broken tool sent, which may not fit the result schema.
+ToolResult = StrictModel | dict[str, Any]
+
+
+def tool_result_json(result: ToolResult) -> dict[str, Any]:
+    return result if isinstance(result, dict) else result.model_dump(mode="json")
+
+
+def _record_tool(span: SpanBuilder, result: ToolResult) -> None:
+    span.output = tool_result_json(result)
 
 
 class ToolBox:
@@ -279,8 +288,9 @@ class ToolBox:
         name=lambda a: str(a["name"]),
         capture=lambda a: {"tool": a["name"], "args": a["args"]},
         record=_record_tool,
+        inject=(tool_result_json, lambda raw: raw),
     )
-    def call(self, name: str, args: dict[str, Any]) -> StrictModel:
+    def call(self, name: str, args: dict[str, Any]) -> ToolResult:
         spec = TOOLS.get(name)
         if spec is None:
             raise ToolInputError(f"unknown tool {name!r}; available: {sorted(TOOLS)}")

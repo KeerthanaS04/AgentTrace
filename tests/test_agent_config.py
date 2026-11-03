@@ -63,7 +63,7 @@ def test_profiles_cover_at_least_three_models() -> None:
     assert len(single_model) >= 3, whole_workflow
 
 
-@pytest.mark.parametrize("profile", ["default", "ultra", "bolt", "mistral", "mixed"])
+@pytest.mark.parametrize("profile", ["default", "ultra", "bolt", "mistral", "spark", "mixed"])
 def test_each_profile_sends_every_step_to_its_configured_model(
     tmp_path: Path, profile: str
 ) -> None:

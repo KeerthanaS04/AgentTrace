@@ -148,7 +148,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
 ## Phase 4: Fault Injection and Scenario Dataset
 **Goal:** labeled dataset with known root causes. · **Milestone:** M2 (minimal slice needed for M1)
 
-- [ ] **P4-T1: Fault catalog.** Pure-function injectors:
+- [x] **P4-T1: Fault catalog.** Pure-function injectors:
   - `F0` control (no fault) · `F1` wrong/stale retrieval · `F2` empty/irrelevant retrieval · `F3` wrong tool value · `F4` malformed/error tool response · `F5` invalid decision · `F6` hallucinated claim · `F7` multi-fault · `F8` silent fault
   - *Done when:* each injector is tested to mutate only its target node.
 - [ ] **P4-T2: Scenario schema + generator.** Ticket + fixtures + fault spec + ground truth (`root_cause_node_ids`, `affected_node_ids`, `expected_final`, `fault_type`). 80–120 scenarios, ≥10 per fault type, ≥15 controls.

@@ -29,12 +29,16 @@ def traced(
     *,
     capture: Callable[[Arguments], dict[str, Any]] | None = None,
     record: Callable[[SpanBuilder, Any], None] | None = None,
+    inject: tuple[Callable[[Any], dict[str, Any]], Callable[[dict[str, Any]], Any]] | None = None,
 ) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """Trace calls of the decorated function.
 
     `name` (or `name(arguments)`) is the node name under the parent span. `capture`
     picks the span input from the call's arguments (default: all except `self`).
     `record` copies the return value into the span (default: `{"result": value}`).
+    `inject = (to_json, from_json)` makes the node a fault-injection point: when the
+    trace carries a fault plan, the return value is converted to JSON, offered to the
+    plan, and (if changed) converted back, before it is recorded and returned.
     """
 
     def decorate(fn: Callable[P, R]) -> Callable[P, R]:
@@ -54,6 +58,12 @@ def traced(
             span_input = capture(arguments) if capture else arguments
             with trace.span(kind, node_id, input=span_input) as span:
                 result = fn(*args, **kwargs)
+                if inject is not None and trace.faults is not None:
+                    to_json, from_json = inject
+                    before = to_json(result)
+                    after = trace.faults.apply(node_id, kind, span.span_id, before)
+                    if after is not before:
+                        result = from_json(after)
                 if record:
                     record(span, result)
                 else:

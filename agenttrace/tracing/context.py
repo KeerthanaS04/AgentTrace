@@ -20,7 +20,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, Protocol
 
 from pydantic import BaseModel
 
@@ -29,6 +29,19 @@ from agenttrace.schemas.span import Explanation, Ref, Span, SpanKind
 
 _active_trace: ContextVar[TraceContext | None] = ContextVar("agenttrace_trace", default=None)
 _open_span: ContextVar[SpanBuilder | None] = ContextVar("agenttrace_span", default=None)
+
+
+class InjectionError(RuntimeError):
+    """A fault plan is misconfigured. The runtime re-raises it instead of recording it as
+    the agent failing, so a broken scenario can never pass for an agent failure."""
+
+
+class FaultHook(Protocol):
+    """Mutates a node's output as it is produced (implemented by faults.FaultPlan)."""
+
+    def apply(
+        self, node_id: str, kind: SpanKind, span_id: str, value: dict[str, Any]
+    ) -> dict[str, Any]: ...
 
 
 def current_trace() -> TraceContext | None:
@@ -99,8 +112,10 @@ class SpanBuilder:
 class TraceContext:
     """Spans of one run. Use as `with TraceContext(run_id) as trace: ...`."""
 
-    def __init__(self, run_id: str) -> None:
+    def __init__(self, run_id: str, *, faults: FaultHook | None = None) -> None:
         self.run_id = run_id
+        # Fault injection for this run (P4); None in normal runs. Never recorded in spans.
+        self.faults = faults
         self._slots: list[SpanBuilder] = []  # in the order spans were opened
         self._done: dict[str, Span] = {}
         self._count: dict[str, int] = {}

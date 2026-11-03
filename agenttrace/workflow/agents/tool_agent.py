@@ -15,6 +15,7 @@ from pydantic import Field
 from agenttrace.workflow.agents.base import ExplainedReply, LLMReply, as_json, ask
 from agenttrace.workflow.runtime import AgentOutput, StepContext
 from agenttrace.workflow.tools import TOOLS, ToolBox, ToolInputError
+from agenttrace.workflow.tools.tools import tool_result_json
 
 MAX_ROUNDS = 3
 MAX_CALLS = 5
@@ -106,6 +107,6 @@ def _execute(toolbox: ToolBox, req: ToolRequest) -> dict[str, Any]:
     return {
         "tool": req.tool,
         "args": req.args,
-        "result": result.model_dump(mode="json"),
+        "result": tool_result_json(result),
         "error": None,
     }
