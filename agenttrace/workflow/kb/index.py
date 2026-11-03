@@ -158,7 +158,15 @@ class BM25Index:
     def __len__(self) -> int:
         return len(self._docs)
 
-    @traced("retrieval", "search", record=_record_hits)
+    @traced(
+        "retrieval",
+        "search",
+        record=_record_hits,
+        inject=(
+            lambda hits: {"hits": [h.model_dump(mode="json") for h in hits]},
+            lambda doc: [SearchHit.model_validate(h) for h in doc["hits"]],
+        ),
+    )
     def search(self, query: str, k: int = 3) -> list[SearchHit]:
         """Top-k docs by BM25 score. Ties break by doc_id; zero-score docs are dropped."""
         if k < 1:

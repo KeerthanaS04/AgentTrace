@@ -15,6 +15,7 @@ from agenttrace.graph import (
     build_graph,
     data_subgraph,
     edges_of_kind,
+    executed_topology,
     node_topology,
 )
 from agenttrace.schemas.run import Run
@@ -154,3 +155,14 @@ def test_broken_traces_are_refused() -> None:
         build_graph(fixture_run("orphan_parent"))
     with pytest.raises(GraphError, match="cycle"):
         build_graph(fixture_run("ref_cycle"))
+
+
+def test_failed_run_matches_the_topology_of_the_steps_that_ran(tmp_path: Path) -> None:
+    """Skipped steps consume nothing: compare against the edges into steps that ran."""
+    g = build_graph(failed_run(tmp_path))  # policy fails, so writer is skipped
+    declared = set(build_support_workflow().edges())
+    assert node_topology(g) != declared  # the writer's inputs are rightly absent
+    expected = executed_topology(g, declared)
+    assert node_topology(g) == expected
+    assert not any(consumer == "writer" for _, consumer in expected)
+    assert ("tool_agent", "policy") in expected  # policy ran (and failed), so it has inputs

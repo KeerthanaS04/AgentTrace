@@ -135,6 +135,14 @@ roles:
     model: nvidia/nemotron-3-ultra-550b-a55b
     params: {temperature: 0, max_tokens: 1024, chat_template_kwargs: {enable_thinking: false}}
 
+  agent_spark:
+    # Muse Spark as an agent under test: comparison runs only (profile `spark`), so Meta
+    # credits stay on diagnosis. Same model as judge_fast, so don't judge this profile's
+    # runs with judge_fast (self-evaluation bias). Reasoning low; room for it in max_tokens.
+    provider: meta
+    model: muse-spark-1.3
+    params: {temperature: 0, max_tokens: 4096, reasoning_effort: low}
+
   agent_alt_2:
     # Small, fast Nemotron: the "weaker agent" for model-agnostic evaluation.
     provider: nvidia

@@ -16,6 +16,7 @@ from agenttrace.graph import (
     build_graph,
     critical_path,
     descendants,
+    downstream,
     final_spans,
     first_divergence,
     paths_to_final,
@@ -242,3 +243,21 @@ def test_token_critical_path_on_a_real_run_is_a_chain_of_steps(tmp_path: Path) -
         llm_calls[g.nodes[n]["node_id"]] for n in cp.spans if g.nodes[n]["node_id"] in llm_calls
     )
     assert cp.total == expected
+
+
+def test_downstream_includes_calls_nested_in_affected_steps(tmp_path: Path) -> None:
+    # Hand-built: a -> step, and step contains call c (c => step). A wrong `a` reaches
+    # `step` and, through its inputs, the call c inside it.
+    g = nx.DiGraph()
+    for seq, n in enumerate(["a", "c", "step", "z"]):
+        g.add_node(n, seq=seq, local_id=n)
+    g.add_edge("a", "step", kind="data")
+    g.add_edge("c", "step", kind="nested")
+    g.add_edge("step", "z", kind="data")
+    assert descendants(g, "a") == {"step", "z"}
+    assert downstream(g, "a") == {"step", "c", "z"}
+    assert downstream(g, "step") == {"z"}  # its own call ran before its output existed
+    # Real run: a wrong policy output reaches the writer and the writer's model call.
+    real = build_graph(traced_run(tmp_path, "r1"))
+    assert {"r1/writer", "r1/writer.llm"} <= downstream(real, "r1/policy")
+    assert "r1/policy.llm" not in downstream(real, "r1/policy")

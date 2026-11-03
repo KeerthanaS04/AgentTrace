@@ -44,6 +44,27 @@ def descendants(g: nx.DiGraph, span_id: str) -> set[str]:
     return set(nx.descendants(g, span_id))
 
 
+def downstream(g: nx.DiGraph, span_id: str) -> set[str]:
+    """Everything a wrong output of `span_id` can corrupt: its descendants, plus the calls
+    nested (at any depth) inside every affected step.
+
+    A step's inputs flow into its nested calls (the writer's prompt contains the policy
+    decision), but nesting edges point child -> parent, so `descendants` alone misses
+    them. The span's own nested calls are not included: they ran before its output
+    existed. (Found while testing fault injection: a wrong policy decision changed
+    `writer.llm`, which is not a graph descendant of `policy`.)
+    """
+    reach = descendants(g, span_id)
+    stack = list(reach)
+    while stack:
+        node = stack.pop()
+        for child, _, attrs in g.in_edges(node, data=True):
+            if attrs.get("kind") == "nested" and child not in reach and child != span_id:
+                reach.add(child)
+                stack.append(child)
+    return reach
+
+
 def topological_order(g: nx.DiGraph, nodes: Iterable[str] | None = None) -> list[str]:
     """Causes before effects; among independent spans, recorded order first."""
     sub = g if nodes is None else g.subgraph(nodes)

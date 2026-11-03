@@ -26,6 +26,11 @@ profiles:
       (30-60s per call on the free tier, ~2 hours for all 20 tickets); try --only first.
     default_role: agent_alt_1
 
+  spark:
+    description: Every agent on agent_spark (Meta Muse Spark). Paid (Meta credits, ~$0.50 for
+      all 20 tickets, then cached); for model comparisons, not the default.
+    default_role: agent_spark
+
   mixed:
     description: Small model for the simple steps, default model for the decision.
     default_role: agent_alt_2

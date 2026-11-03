@@ -24,7 +24,7 @@ The graph is a DAG for any trace that passes the integrity checks (P2-T5).
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from typing import Any, Literal
 
 import networkx as nx
@@ -145,6 +145,18 @@ def data_subgraph(g: nx.DiGraph) -> nx.DiGraph:
     sub.add_nodes_from(g.nodes(data=True))
     sub.add_edges_from((u, v, d) for u, v, d in g.edges(data=True) if d["kind"] == "data")
     return sub
+
+
+def executed_topology(g: nx.DiGraph, declared: Iterable[tuple[str, str]]) -> set[tuple[str, str]]:
+    """The declared edges a run should show: those into steps that actually ran.
+
+    A skipped step consumed nothing, so its incoming edges are rightly absent; compare a
+    run's `node_topology` with this, not with the full declaration. (Measured: Bolt's two
+    Tool Agent parse failures skipped policy and writer, and the full-declaration check
+    wrongly reported those graphs as mismatched.)
+    """
+    ran = {a["node_id"] for _, a in g.nodes(data=True) if a.get("status") != "skipped"}
+    return {(producer, consumer) for producer, consumer in declared if consumer in ran}
 
 
 def node_topology(g: nx.DiGraph) -> set[tuple[str, str]]:
