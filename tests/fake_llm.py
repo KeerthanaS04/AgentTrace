@@ -73,22 +73,33 @@ def make_gateway(
     calls: list[tuple[str, str]] | None = None,
     config_path: Path = CONFIG_PATH,
     usage: dict[str, int] | None = None,
+    seeded: Callable[[str, Any], dict[str, Any]] | None = None,
+    bodies: list[dict[str, Any]] | None = None,
+    status: Callable[[str, Any], int] | None = None,
 ) -> Gateway:
     """A real Gateway whose providers are replaced by the scripted server.
 
     `prompts` collects each agent prompt; `calls` collects (agent, model id) per request;
-    `usage` is returned as each reply's token usage (default: none reported).
+    `usage` is returned as each reply's token usage (default: none reported). `seeded`,
+    if given, replaces `script` and also gets the request's `seed` (None if unset), for
+    tests of repeated runs; `bodies` collects every raw request body. `status(prompt,
+    seed)` can answer with an HTTP error code instead (e.g. 429). Backoff never sleeps.
     """
 
     def handler(request: httpx.Request) -> httpx.Response:
         body = json.loads(request.content)
+        if bodies is not None:
+            bodies.append(body)
         # The agent's own prompt is the first user message; later ones are repair requests.
         prompt = next(m["content"] for m in body["messages"] if m["role"] == "user")
         if prompts is not None:
             prompts.append(prompt)
         if calls is not None:
             calls.append((agent_of(prompt), body["model"]))
-        content = json.dumps(script(prompt))
+        if status is not None and (code := status(prompt, body.get("seed"))) != 200:
+            return httpx.Response(code, json={"status": code, "title": "fake error"})
+        answer = seeded(prompt, body.get("seed")) if seeded is not None else script(prompt)
+        content = json.dumps(answer)
         reply: dict[str, Any] = {"choices": [{"message": {"content": content}}]}
         if usage is not None:
             reply["usage"] = usage
@@ -100,4 +111,5 @@ def make_gateway(
         cache=CompletionCache(tmp_path / "c.sqlite"),
         env={"NVIDIA_API_KEY": "k", "MODEL_API_KEY": "k", "OPENROUTER_API_KEY": "k"},
         transports={p: httpx.MockTransport(handler) for p in config.providers},
+        sleep=lambda _: None,
     )

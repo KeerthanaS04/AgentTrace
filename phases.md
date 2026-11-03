@@ -157,7 +157,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
   - *Done when:* a test fails on any forbidden import path.
 - [x] **P4-T4: Scenario verification.** Confirm each fault produces its labeled effect (F8: intentionally none).
   - *Done when:* ≥95% behave as labeled; the rest are fixed, documented, or removed.
-- [ ] **P4-T5: Multi-run protocol.** K runs per scenario with different seeds (default K=3).
+- [x] **P4-T5: Multi-run protocol.** K runs per scenario with different seeds (default K=3).
   - *Done when:* K runs stored per scenario; pass-rate variance reported.
 
 ---
