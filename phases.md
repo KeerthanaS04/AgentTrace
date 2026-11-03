@@ -134,7 +134,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
 ## Phase 3: Graph Reconstruction
 **Goal:** traces → queryable causal DAG. · **Milestone:** M1
 
-- [ ] **P3-T1: Graph builder.** `networkx.DiGraph`: nodes = spans, edges = `input_refs`, with agent/kind/contract attributes.
+- [x] **P3-T1: Graph builder.** `networkx.DiGraph`: nodes = spans, edges = `input_refs`, with agent/kind/contract attributes.
   - *Done when:* graph matches declared topology on clean runs.
 - [ ] **P3-T2: Graph queries.** `ancestors`, `descendants`, `topological_order`, `paths_to_final`, `critical_path`, `first_divergence`.
   - *Done when:* tested on hand-built graphs.

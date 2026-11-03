@@ -10,6 +10,7 @@ dependencies = [
     "python-dotenv>=1.0",
     "httpx>=0.27",
     "sqlalchemy>=2.0",
+    "networkx>=3.2",
 ]
 
 [project.scripts]
@@ -23,6 +24,7 @@ dev = [
     "mypy>=1.10",
     "types-pyyaml>=6.0",
     "pre-commit>=3.7",
+    "types-networkx>=3.6.1.20261031",
 ]
 
 [build-system]

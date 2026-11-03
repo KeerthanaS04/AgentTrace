@@ -167,6 +167,7 @@ def test_clean_eval_reports_final_outcome(tmp_path: Path, monkeypatch: pytest.Mo
     assert (summary["correct"], summary["final_correct"]) == (2, 1)
     assert summary["provenance_exact"] == 2  # P2-T2: refs match the declared data flow
     assert summary["integrity_ok"] == 2  # P2-T5: no orphans, cycles, or time errors
+    assert summary["topology_ok"] == 2  # P3-T1: span graph = declared workflow
     assert (tmp_path / "clean_eval_default.json").exists()
 
 
