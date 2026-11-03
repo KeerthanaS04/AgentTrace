@@ -1,5 +1,6 @@
 """Graph builder and queries over span data-flow DAGs."""
 
+from agenttrace.graph.alignment import AlignedSpan, Alignment, AlignmentError, align_runs
 from agenttrace.graph.builder import (
     GraphError,
     build_graph,
@@ -22,6 +23,10 @@ from agenttrace.graph.queries import (
 )
 
 __all__ = [
+    "AlignedSpan",
+    "Alignment",
+    "AlignmentError",
+    "align_runs",
     "CriticalPath",
     "Divergence",
     "GraphError",

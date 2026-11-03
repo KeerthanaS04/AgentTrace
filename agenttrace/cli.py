@@ -11,6 +11,7 @@
     agenttrace graph clean-07-default-r1          # final spans, causal order, critical path
     agenttrace graph RUN --from tool_agent.order_lookup   # its paths to the final output
     agenttrace graph RUN_A --diff RUN_B           # where two runs first diverge
+    agenttrace diff RUN_A RUN_B                   # each span: same / changed (how) / only in one
 
 The store is SQLite at .cache/agenttrace.db (override with --db or $AGENTTRACE_DB).
 """
@@ -71,6 +72,11 @@ def build_parser() -> argparse.ArgumentParser:
     graph.add_argument(
         "--weight", choices=["duration_s", "cost_usd", "tokens"], default="duration_s"
     )
+
+    diff = with_db(sub.add_parser("diff", help="align two stored runs span by span"))
+    diff.add_argument("run_a")
+    diff.add_argument("run_b")
+    diff.add_argument("--all", action="store_true", help="also list unchanged spans")
 
     for name in NOT_YET:
         sub.add_parser(name)
@@ -251,6 +257,40 @@ def cmd_graph(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_diff(args: argparse.Namespace) -> int:
+    from agenttrace.graph import AlignmentError, align_runs, first_divergence
+    from agenttrace.graph import build_graph as graph_of
+    from agenttrace.store import TraceStore
+
+    with TraceStore.open(args.db) as store:
+        for run_id in (args.run_a, args.run_b):
+            if not store.has_run(run_id):
+                print(f"no stored run {run_id!r} (see `agenttrace runs`)")
+                return 2
+        a, b = store.get_run(args.run_a), store.get_run(args.run_b)
+    try:
+        al = align_runs(a, b)
+    except AlignmentError as exc:
+        print(f"cannot align: {exc}")
+        return 2
+    print(f"{args.run_a}  vs  {args.run_b}")
+    print(
+        f"unchanged {len(al.unchanged)}, changed {len(al.changed)}, "
+        f"only in A {len(al.only_a)}, only in B {len(al.only_b)}\n"
+    )
+    labels = {"changed": "CHANGED", "only_a": "only A", "only_b": "only B", "unchanged": "same"}
+    for p in al.pairs:
+        if p.status == "unchanged" and not args.all:
+            continue
+        what = f"  ({', '.join(p.changes)})" if p.changes else ""
+        print(f"  {labels[p.status]:<8} {p.local_id}{what}")
+    if al.identical:
+        print("  every span matches")
+    d = first_divergence(graph_of(a), graph_of(b))
+    print(f"\nfirst divergence: {'none' if d is None else f'{d.local_id} ({d.reason})'}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command in NOT_YET:
@@ -263,6 +303,7 @@ def main(argv: list[str] | None = None) -> int:
         "export": cmd_export,
         "import": cmd_import,
         "graph": cmd_graph,
+        "diff": cmd_diff,
     }[args.command]
     return handler(args)
 
