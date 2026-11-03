@@ -9,10 +9,16 @@
     KB-REF-005), the account is under fraud review, the customer mentions legal action, a
     chargeback has been filed, or the customer has contacted support 3 or more times about
     the same issue without a resolution.
+
+    When more than one rule applies, account and payment rules take precedence over refund
+    amount limits: an account under fraud review goes to Trust & Safety (see KB-ACC-003)
+    and a chargeback goes to the Payments team (see KB-ESC-002), even if the refund amount
+    is over $200.00.
   facts:
     - {name: escalate_refund_over_usd, value: 200.00, text: "the refund amount is over $200.00"}
     - {name: repeat_contact_threshold, value: 3, text: "3 or more times about the same issue"}
     - {name: escalate_legal, value: true, text: "the customer mentions legal action"}
+    - {name: escalation_precedence, value: "account and payment rules first", text: "account and payment rules take precedence over refund amount limits"}
 
 - doc_id: KB-ESC-002
   title: Chargebacks and Payment Disputes
