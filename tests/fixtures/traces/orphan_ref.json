@@ -1,0 +1,101 @@
+{
+ "format": "agenttrace.run",
+ "version": 1,
+ "run": {
+  "run_id": "fx",
+  "workflow_version": "fixture@1",
+  "final_output": {
+   "z": 2
+  },
+  "created_at": "2026-11-03T10:00:00.000000Z",
+  "spans": [
+   {
+    "span_id": "fx/__input__",
+    "run_id": "fx",
+    "node_id": "__input__",
+    "agent": "__input__",
+    "kind": "message",
+    "started_at": "2026-11-03T10:00:00.000000Z",
+    "ended_at": "2026-11-03T10:00:00.000000Z",
+    "output": {
+     "ticket": "where is my order?"
+    }
+   },
+   {
+    "span_id": "fx/a",
+    "run_id": "fx",
+    "node_id": "a",
+    "agent": "a",
+    "kind": "agent",
+    "started_at": "2026-11-03T10:00:00.010000Z",
+    "ended_at": "2026-11-03T10:00:00.040000Z",
+    "input": {
+     "ticket": "where is my order?"
+    },
+    "input_refs": [
+     {
+      "span_id": "fx/__input__",
+      "key": "ticket",
+      "content_hash": "sha256:ace30ab7d768be5f90e598f24712effed94a6016ba26f6f856b157ce88b79908",
+      "input_key": "ticket"
+     }
+    ],
+    "output": {
+     "y": 1
+    }
+   },
+   {
+    "span_id": "fx/a.llm",
+    "run_id": "fx",
+    "node_id": "a.llm",
+    "agent": "a",
+    "kind": "llm",
+    "started_at": "2026-11-03T10:00:00.020000Z",
+    "ended_at": "2026-11-03T10:00:00.030000Z",
+    "parent_span_id": "fx/a",
+    "model": "some/model",
+    "tokens_in": 12,
+    "tokens_out": 3,
+    "output": {
+     "text": "{\"y\": 1}"
+    }
+   },
+   {
+    "span_id": "fx/b",
+    "run_id": "fx",
+    "node_id": "b",
+    "agent": "b",
+    "kind": "agent",
+    "started_at": "2026-11-03T10:00:00.050000Z",
+    "ended_at": "2026-11-03T10:00:00.080000Z",
+    "input": {
+     "v": 1
+    },
+    "input_refs": [
+     {
+      "span_id": "fx/ghost",
+      "key": "y",
+      "content_hash": "sha256:6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b",
+      "input_key": "v"
+     }
+    ],
+    "output": {
+     "z": 2
+    }
+   },
+   {
+    "span_id": "fx/b.tool",
+    "run_id": "fx",
+    "node_id": "b.tool",
+    "agent": "b",
+    "kind": "tool",
+    "started_at": "2026-11-03T10:00:00.060000Z",
+    "ended_at": "2026-11-03T10:00:00.070000Z",
+    "parent_span_id": "fx/b",
+    "output": {
+     "ok": true
+    }
+   }
+  ]
+ }
+}
