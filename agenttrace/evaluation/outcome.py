@@ -18,7 +18,8 @@ from collections.abc import Mapping
 from typing import Any
 
 from agenttrace.schemas.base import StrictModel
-from agenttrace.schemas.ground_truth import Decision, ExpectedFinal
+from agenttrace.schemas.ground_truth import ExpectedFinal
+from agenttrace.schemas.scenario import Decision
 
 # Hyphen, non-breaking hyphen, figure dash, en/em dash, horizontal bar, minus sign,
 # small and fullwidth hyphen-minus.

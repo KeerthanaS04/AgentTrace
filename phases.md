@@ -153,7 +153,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
   - *Done when:* each injector is tested to mutate only its target node.
 - [x] **P4-T2: Scenario schema + generator.** Ticket + fixtures + fault spec + ground truth (`root_cause_node_ids`, `affected_node_ids`, `expected_final`, `fault_type`). 80–120 scenarios, ≥10 per fault type, ≥15 controls.
   - *Done when:* dataset validates, is balanced, and is committed to `data/scenarios/`.
-- [ ] **P4-T3: Ground-truth isolation.** Only `scenarios/ground_truth.py` exposes truth; `diagnosis/` and `explainability/` can't import it.
+- [x] **P4-T3: Ground-truth isolation.** Only `scenarios/ground_truth.py` exposes truth; `diagnosis/` and `explainability/` can't import it.
   - *Done when:* a test fails on any forbidden import path.
 - [ ] **P4-T4: Scenario verification.** Confirm each fault produces its labeled effect (F8: intentionally none).
   - *Done when:* ≥95% behave as labeled; the rest are fixed, documented, or removed.
