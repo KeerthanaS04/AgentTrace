@@ -233,6 +233,24 @@ def test_injector_details() -> None:
     }
 
 
+def test_wrong_values_change_a_record_consistently() -> None:
+    order = {"order": {"delivered_at": "2026-01-19", "delivered_late": True, "status": "x"}}
+    out = INJECTORS["tool_wrong_value"](
+        order, {"values": {"order.delivered_at": "2026-01-16", "order.delivered_late": False}}
+    )
+    assert out == {"order": {"delivered_at": "2026-01-16", "delivered_late": False, "status": "x"}}
+
+
+def test_claim_can_replace_the_reasoning() -> None:
+    value = {"justification": "The true reasoning."}
+    appended = INJECTORS["hallucinated_claim"](value, {"field": "justification", "claim": "Lie."})
+    assert appended["justification"] == "The true reasoning. Lie."
+    replaced = INJECTORS["hallucinated_claim"](
+        value, {"field": "justification", "claim": "Lie.", "mode": "replace"}
+    )
+    assert replaced["justification"] == "Lie."
+
+
 # ---------------------------------------------------------------- misconfiguration fails loudly
 
 
@@ -247,6 +265,16 @@ def test_bad_fault_specs_are_refused(tmp_path: Path) -> None:
         INJECTORS["tool_wrong_value"]({"order": {}}, {"path": "order.nope", "value": 1})
     with pytest.raises(FaultParamError, match="unknown mode"):
         INJECTORS["tool_malformed"]({}, {"mode": "explode"})
+    with pytest.raises(FaultParamError, match="path and value, or values"):
+        INJECTORS["tool_wrong_value"]({"order": {}}, {"path": "order.status"})
+    with pytest.raises(FaultParamError, match="values is empty"):
+        INJECTORS["tool_wrong_value"]({"order": {}}, {"values": {}})
+    with pytest.raises(FaultParamError, match="unknown mode"):
+        INJECTORS["hallucinated_claim"]({"j": "x"}, {"field": "j", "claim": "c", "mode": "swap"})
+    with pytest.raises(FaultParamError, match="cannot take a replace claim"):
+        INJECTORS["hallucinated_claim"](
+            {"ids": []}, {"field": "ids", "claim": "c", "mode": "replace"}
+        )
 
 
 def test_wrong_kind_or_bad_path_fails_the_run(tmp_path: Path) -> None:

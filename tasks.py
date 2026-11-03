@@ -1,6 +1,6 @@
 """Cross-platform task runner (stands in for `make` where it isn't installed).
 
-Usage: python tasks.py <setup|test|lint|format|serve|eval|smoke|retrieval|toy|clean> [args]
+Usage: python tasks.py <setup|test|lint|format|serve|eval|smoke|retrieval|toy|clean|verify> [args]
 """
 
 from __future__ import annotations
@@ -72,8 +72,12 @@ def clean(*args: str) -> int:
     return _run("uv", "run", "python", "-m", "agenttrace.workflow.clean_eval", *args)
 
 
+def verify(*args: str) -> int:
+    return _run("uv", "run", "python", "-m", "agenttrace.scenarios.verify", *args)
+
+
 # Tasks that forward extra command-line arguments (e.g. `clean --profile bolt`).
-WITH_ARGS: dict[str, Callable[..., int]] = {"clean": clean}
+WITH_ARGS: dict[str, Callable[..., int]] = {"clean": clean, "verify": verify}
 
 TASKS: dict[str, Callable[..., int]] = {
     "setup": setup,
