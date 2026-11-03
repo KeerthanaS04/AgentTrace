@@ -87,34 +87,54 @@ class OpenAICompatibleProvider:
         )
 
     def _post_with_retry(self, path: str, body: dict[str, Any]) -> dict[str, Any]:
-        attempts = self.config.max_retries + 1
-        for attempt in range(1, attempts + 1):
+        """POST with retries. Errors and 429s draw on separate budgets: a rate limit is
+        waited out (longer, doubling waits) rather than counted as a failing endpoint."""
+        retries = rate_limited = 0
+        while True:
             try:
                 resp = self._client.post(path, json=body)
             except httpx.TransportError as exc:
-                if attempt == attempts:
+                if retries >= self.config.max_retries:
                     raise ProviderRequestError(f"{self.name}: {exc}") from exc
-                self._backoff(attempt, None, str(exc))
+                retries += 1
+                self._backoff(retries, None, str(exc))
                 continue
             if resp.status_code == 200:
                 result: dict[str, Any] = resp.json()
                 return result
-            if resp.status_code in RETRYABLE_STATUS and attempt < attempts:
-                self._backoff(attempt, resp.headers.get("retry-after"), f"HTTP {resp.status_code}")
+            reason = f"HTTP {resp.status_code}"
+            if resp.status_code == 429 and rate_limited < self.config.rate_limit_retries:
+                rate_limited += 1
+                cap = self.config.rate_limit_max_wait_s
+                self._backoff(rate_limited, resp.headers.get("retry-after"), reason, cap, base=2.0)
+                continue
+            if (
+                resp.status_code in RETRYABLE_STATUS
+                and resp.status_code != 429
+                and retries < self.config.max_retries
+            ):
+                retries += 1
+                self._backoff(retries, resp.headers.get("retry-after"), reason)
                 continue
             raise ProviderRequestError(
                 f"{self.name}: HTTP {resp.status_code}: {resp.text[:300]}",
                 status_code=resp.status_code,
             )
-        raise AssertionError("unreachable")
 
-    def _backoff(self, attempt: int, retry_after: str | None, reason: str) -> None:
+    def _backoff(
+        self,
+        attempt: int,
+        retry_after: str | None,
+        reason: str,
+        cap: float = 30.0,
+        base: float = 1.0,
+    ) -> None:
         try:
             delay = float(retry_after) if retry_after else 0.0
         except ValueError:
             delay = 0.0
         if delay <= 0:
-            delay = min(30.0, 2 ** (attempt - 1)) + random.uniform(0, 0.5)
+            delay = min(cap, base * 2 ** (attempt - 1)) + random.uniform(0, 0.5)
         log.warning("%s: %s, retry %d in %.1fs", self.name, reason, attempt, delay)
         self._sleep(delay)
 

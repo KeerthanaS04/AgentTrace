@@ -63,6 +63,7 @@ def ask(ctx: StepContext, prompt: str, schema: type[ReplyT]) -> ReplyT:
         role,
         [{"role": "user", "content": prompt}],
         schema,
+        params=dict(ctx.model_params) or None,  # run-level overrides, e.g. a seed (P4-T5)
         tag=f"{ctx.run_id}/{ctx.step}",
     )
     if result.value is None:

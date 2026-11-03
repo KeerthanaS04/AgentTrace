@@ -55,8 +55,12 @@ def check(tmp_path: Path, scenario: Scenario) -> Verification:
 
 
 def test_control_behaves_when_the_clean_decision_is_right(tmp_path: Path) -> None:
-    v = check(tmp_path, find("F0", "T-0101"))  # the fake model approves, as expected
-    assert v.behaves and v.reason == "ok" and v.applied == []
+    control = find("F0", "T-0101")
+    v, run = verify_scenario(make_gateway(tmp_path), control, ROLES, "default", {})
+    assert v.behaves and v.reason == "ok" and v.applied == []  # the fake model approves
+    # The control run is returned (and stored) under the control's own id.
+    assert run is not None and run.scenario_id == control.scenario_id
+    assert v.faulty_run_id == run.run_id == f"{control.scenario_id}-default"
 
 
 def test_effective_fault_behaves(tmp_path: Path) -> None:
@@ -147,7 +151,7 @@ def test_full_store_run_prunes_runs_of_old_scenario_ids() -> None:
             self.ids.remove(run_id)
 
     store = FakeStore()
-    verify._prune_stale(store, {"sc-001-default", None}, "default")  # type: ignore[arg-type]
+    verify.prune_stale(store, {"sc-001-default", None}, "default")  # type: ignore[arg-type]
     # Only this profile's scenario runs that the verification did not produce go.
     assert store.ids == ["sc-001-default", "sc-150-bolt", "clean-07-x", "T-0101-default"]
 
@@ -182,5 +186,4 @@ def test_main_reports_and_stores(
 
     with TraceStore.open(tmp_path / "store.db") as store:
         stored = store.run_ids()
-    assert len(stored) == 2  # the two faulty runs (controls have none)
-    assert all(store_id.endswith("-default") for store_id in stored)
+    assert sorted(stored) == sorted(f"{i}-default" for i in ids)  # controls are stored too

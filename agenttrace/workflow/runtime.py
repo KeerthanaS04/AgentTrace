@@ -76,6 +76,8 @@ class StepContext:
     step: str
     params: Mapping[str, Any] = field(default_factory=dict)
     resources: Mapping[str, Any] = field(default_factory=dict)
+    # Overrides for every model call in this run, e.g. {"seed": 2} for repeated runs (P4-T5).
+    model_params: Mapping[str, Any] = field(default_factory=dict)
 
     def resource(self, name: str, kind: type[T]) -> T:
         if name not in self.resources:
@@ -131,6 +133,7 @@ class WorkflowResult(StrictModel):
     steps: list[StepRecord] = Field(default_factory=list)
     # Every span of the run, parents before children (see module docstring).
     spans: list[Span] = Field(default_factory=list)
+    model_params: dict[str, Any] = Field(default_factory=dict)
 
     def step(self, name: str) -> StepRecord:
         return next(s for s in self.steps if s.step == name)
@@ -148,6 +151,7 @@ class WorkflowResult(StrictModel):
             final_output=self.outputs,
             final_correct=final_correct,
             spans=self.spans,
+            seed=self.model_params.get("seed"),
         )
 
 
@@ -263,9 +267,13 @@ class Workflow:
         run_id: str,
         resources: Mapping[str, Any] | None = None,
         faults: FaultHook | None = None,
+        model_params: Mapping[str, Any] | None = None,
     ) -> WorkflowResult:
         """Run the workflow. `faults` (a `faults.FaultPlan`) injects faults as nodes
-        produce their outputs; it is for building labelled scenarios (P4) only."""
+        produce their outputs; it is for building labelled scenarios (P4) only.
+        `model_params` override every model call's params for this run (e.g. a seed); they
+        reach the gateway through each step's context and change its cache key."""
+        sampling = dict(model_params or {})
         missing, extra = set(self.inputs) - set(inputs), set(inputs) - set(self.inputs)
         if missing or extra:
             raise ValueError(
@@ -283,7 +291,7 @@ class Workflow:
             for name in self.order:
                 step = self.steps[name]
                 records[name] = self._run_step(
-                    step, run_id, values, minted, records, resources, trace
+                    step, run_id, values, minted, records, resources, trace, sampling
                 )
 
         outputs: dict[str, Any] = {}
@@ -300,6 +308,7 @@ class Workflow:
             outputs=outputs,
             steps=[records[n] for n in self.order],
             spans=trace.spans,
+            model_params=sampling,
         )
 
     def _run_step(
@@ -311,6 +320,7 @@ class Workflow:
         records: Mapping[str, StepRecord],
         resources: Mapping[str, Any] | None,
         trace: TraceContext,
+        model_params: Mapping[str, Any],
     ) -> StepRecord:
         base: dict[str, Any] = {
             "step_id": step_id(run_id, step.name),
@@ -338,7 +348,11 @@ class Workflow:
             refs.append(minted[(owner, src.key)].model_copy(update={"input_key": key}))
 
         ctx = StepContext(
-            run_id=run_id, step=step.name, params=step.params, resources=resources or {}
+            run_id=run_id,
+            step=step.name,
+            params=step.params,
+            resources=resources or {},
+            model_params=model_params,
         )
         started = utc_now()
         with trace.span(

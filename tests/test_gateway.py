@@ -277,6 +277,28 @@ def test_retries_exhausted(make_gateway: GatewayFactory) -> None:
     assert len(fake.requests) == 5  # 1 + max_retries (default 4)
 
 
+def test_rate_limits_get_their_own_longer_budget(make_gateway: GatewayFactory) -> None:
+    # Six 429s outlast the ordinary 4 retries, but rate limits are waited out.
+    fake = FakeProvider(replies=[(429, {})] * 6 + [(200, ok_body("ok"))])
+    sleeps: list[float] = []
+    gw, _ = make_gateway(fakes={"meta": fake})
+    gw._sleep = sleeps.append
+    assert gw.complete("judge_fast", USER).text == "ok"
+    assert len(fake.requests) == 7
+    # Doubling from 2 s, capped at 60 s (plus up to 0.5 s jitter).
+    assert [int(s) for s in sleeps] == [2, 4, 8, 16, 32, 60]
+
+
+def test_rate_limit_budget_runs_out(make_gateway: GatewayFactory) -> None:
+    fake = FakeProvider(replies=[(429, {})] * 20)
+    gw, _ = make_gateway(fakes={"meta": fake})
+    gw._sleep = lambda s: None
+    with pytest.raises(ProviderRequestError) as exc:
+        gw.complete("judge_fast", USER)
+    assert exc.value.status_code == 429
+    assert len(fake.requests) == 9  # 1 + rate_limit_retries (default 8)
+
+
 def test_failed_call_is_not_cached(make_gateway: GatewayFactory) -> None:
     fake = FakeProvider(replies=[(400, {})])
     gw, _ = make_gateway(fakes={"meta": fake})

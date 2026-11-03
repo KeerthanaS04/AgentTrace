@@ -42,6 +42,11 @@ class ProviderConfig(StrictModel):
     supports_json_mode: bool = False
     timeout_s: float = Field(default=60.0, gt=0)
     max_retries: int = Field(default=4, ge=0)
+    # HTTP 429 gets its own, longer retry budget: free tiers limit requests per minute, so
+    # the 1-15 s of ordinary backoff is too short (measured in P4-T5: NVIDIA rejected the
+    # 5th attempt). Waits double up to `rate_limit_max_wait_s` (or follow Retry-After).
+    rate_limit_retries: int = Field(default=8, ge=0)
+    rate_limit_max_wait_s: float = Field(default=60.0, gt=0)
     # Lifetime spend cap for this provider (USD), enforced by the budget guard.
     budget_usd: NonNegativeFloat | None = None
     # Log a warning once lifetime spend on this provider crosses this amount.
