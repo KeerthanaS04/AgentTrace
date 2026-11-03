@@ -27,6 +27,7 @@ import yaml
 
 from agenttrace.evaluation.outcome import check_outcome
 from agenttrace.gateway.gateway import Gateway
+from agenttrace.graph import build_graph, node_topology
 from agenttrace.schemas.ground_truth import Scenario
 from agenttrace.tracing.integrity import check_integrity
 from agenttrace.tracing.tree import format_tree
@@ -124,6 +125,7 @@ def evaluate_profile(
         run = result.to_run(scenario_id=sc.scenario_id, final_correct=outcome.correct)
         provenance = check_provenance(run, workflow)
         integrity = [str(i) for i in check_integrity(run)]
+        topology_ok = node_topology(build_graph(run)) == set(workflow.edges())
         if not quiet:
             cat_text = cat if cat == sc.category else f"{cat}(want {sc.category})"
             problems = list(found)
@@ -131,6 +133,8 @@ def evaluate_profile(
                 problems.append(f"reply lacks {outcome.facts_missing}")
             problems += [f"provenance: {p}" for p in provenance]
             problems += [f"integrity: {i}" for i in integrity]
+            if not topology_ok:
+                problems.append("graph: topology differs from the workflow")
             print(
                 f"{sc.scenario_id:<10} {expected:<9} {got:<9} {'Y' if ok else 'N':<3} "
                 f"{'Y' if outcome.correct else 'N':<6}{cat_text:<17} {secs:5.1f}  "
@@ -155,6 +159,7 @@ def evaluate_profile(
                 "violations": found,
                 "provenance_problems": provenance,
                 "integrity_issues": integrity,
+                "topology_ok": topology_ok,
                 "result": result.model_dump(mode="json", exclude={"spans"}),
                 "run": run.model_dump(mode="json"),  # the full trace (P2-T1)
             }
@@ -173,6 +178,7 @@ def evaluate_profile(
         "with_violations": sum(bool(r["violations"]) for r in rows),
         "provenance_exact": sum(not r["provenance_problems"] for r in rows),
         "integrity_ok": sum(not r["integrity_issues"] for r in rows),
+        "topology_ok": sum(r["topology_ok"] for r in rows),
         "seconds": round(sum(r["seconds"] for r in rows), 1),
         "rows": rows,
     }
@@ -192,6 +198,7 @@ def print_summary(s: dict[str, Any]) -> None:
     print(f"tickets with contract violations: {s['with_violations']}/{n}")
     print(f"provenance exact  : {s['provenance_exact']}/{n}  (refs match declared data flow)")
     print(f"trace integrity   : {s['integrity_ok']}/{n}  (no orphans, cycles, or time errors)")
+    print(f"graph topology    : {s['topology_ok']}/{n}  (span graph = declared workflow)")
     print(f"full step records : reports/clean_eval_{s['profile']}.json")
     print("PASS" if s["accuracy"] >= TARGET else "FAIL")
 
