@@ -1,10 +1,13 @@
-"""Command-line entry point: `agenttrace run|runs|show|diagnose|replay|score|eval|serve`.
+"""Command-line entry point: `agenttrace run|runs|show|export|import|diagnose|...`.
 
     agenttrace run --scenario clean-07            # run one scenario, store its trace
     agenttrace run --scenario clean-07 --trace    # ... and print the span tree
     agenttrace runs [--scenario clean-07]         # list stored runs
     agenttrace show clean-07-default-r1           # reload a stored run, print its tree
     agenttrace show clean-07-default-r1 --node policy   # one span, as JSON
+    agenttrace export clean-07-default-r1 -o run.json   # one or more runs to a JSON file
+    agenttrace export --scenario clean-07 --otel -o otel.json   # OTLP/JSON instead
+    agenttrace import run.json                    # load runs (native or OTLP) into the store
 
 The store is SQLite at .cache/agenttrace.db (override with --db or $AGENTTRACE_DB).
 """
@@ -47,6 +50,16 @@ def build_parser() -> argparse.ArgumentParser:
     show = with_db(sub.add_parser("show", help="reload a stored run and print it"))
     show.add_argument("run_id")
     show.add_argument("--node", help="print this node's span(s) as JSON instead of the tree")
+
+    export = with_db(sub.add_parser("export", help="write stored runs to a JSON file"))
+    export.add_argument("run_ids", nargs="*", help="run ids (or use --scenario)")
+    export.add_argument("--scenario", help="every stored run of this scenario")
+    export.add_argument("-o", "--out", type=Path, required=True, help="output file")
+    export.add_argument("--otel", action="store_true", help="OpenTelemetry OTLP/JSON format")
+
+    imp = with_db(sub.add_parser("import", help="load runs from a JSON file into the store"))
+    imp.add_argument("file", type=Path)
+    imp.add_argument("--replace", action="store_true", help="overwrite runs already stored")
 
     for name in NOT_YET:
         sub.add_parser(name)
@@ -136,12 +149,62 @@ def cmd_show(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_export(args: argparse.Namespace) -> int:
+    from agenttrace.store import TraceStore
+    from agenttrace.tracing.export import export_runs
+
+    with TraceStore.open(args.db) as store:
+        ids = list(args.run_ids)
+        if args.scenario:
+            ids += [i for i in store.run_ids(scenario_id=args.scenario) if i not in ids]
+        if not ids:
+            print("nothing to export: give run ids or --scenario")
+            return 2
+        missing = [i for i in ids if not store.has_run(i)]
+        if missing:
+            print(f"no stored run(s): {', '.join(missing)}")
+            return 2
+        runs = [store.get_run(i) for i in ids]
+    path = export_runs(runs, args.out, otel=args.otel)
+    fmt = "OTLP/JSON" if args.otel else "agenttrace JSON"
+    n_spans = sum(len(r.spans) for r in runs)
+    print(f"exported {len(runs)} run(s), {n_spans} spans, as {fmt} to {path}")
+    return 0
+
+
+def cmd_import(args: argparse.Namespace) -> int:
+    from agenttrace.store import TraceStore
+    from agenttrace.tracing.export import TraceFormatError, import_runs
+
+    try:
+        runs = import_runs(args.file)
+    except (OSError, TraceFormatError, ValueError) as exc:
+        print(f"cannot import {args.file}: {exc}")
+        return 2
+    with TraceStore.open(args.db) as store:
+        clashes = [r.run_id for r in runs if store.has_run(r.run_id)]
+        if clashes and not args.replace:
+            print(f"already stored (use --replace): {', '.join(clashes)}")
+            return 2
+        for run in runs:
+            store.save_run(run, replace=args.replace)
+    for run in runs:
+        print(f"imported {run.run_id}  ({len(run.spans)} spans, {run.workflow_version})")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command in NOT_YET:
         print(f"`agenttrace {args.command}` is not implemented yet ({NOT_YET[args.command]}).")
         return 1
-    handler = {"run": cmd_run, "runs": cmd_runs, "show": cmd_show}[args.command]
+    handler = {
+        "run": cmd_run,
+        "runs": cmd_runs,
+        "show": cmd_show,
+        "export": cmd_export,
+        "import": cmd_import,
+    }[args.command]
     return handler(args)
 
 
