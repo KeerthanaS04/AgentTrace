@@ -155,7 +155,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
   - *Done when:* dataset validates, is balanced, and is committed to `data/scenarios/`.
 - [x] **P4-T3: Ground-truth isolation.** Only `scenarios/ground_truth.py` exposes truth; `diagnosis/` and `explainability/` can't import it.
   - *Done when:* a test fails on any forbidden import path.
-- [ ] **P4-T4: Scenario verification.** Confirm each fault produces its labeled effect (F8: intentionally none).
+- [x] **P4-T4: Scenario verification.** Confirm each fault produces its labeled effect (F8: intentionally none).
   - *Done when:* ≥95% behave as labeled; the rest are fixed, documented, or removed.
 - [ ] **P4-T5: Multi-run protocol.** K runs per scenario with different seeds (default K=3).
   - *Done when:* K runs stored per scenario; pass-rate variance reported.

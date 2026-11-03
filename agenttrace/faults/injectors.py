@@ -119,9 +119,23 @@ def _retrieval_irrelevant(value: Value, params: Mapping[str, Any]) -> Value:
 
 
 def _tool_wrong_value(value: Value, params: Mapping[str, Any]) -> Value:
-    """Set one field of a tool's result, e.g. order.status or refunds_last_90_days."""
-    holder, key = _walk(value, params["path"])
-    holder[key] = params["value"]
+    """Set one field of a tool's result, e.g. order.status or refunds_last_90_days.
+
+    `values` ({path: value}) sets several fields of the same record consistently, so the
+    wrong fact is not contradicted by a sibling field (a late delivery rewritten as on
+    time must also move `delivered_at`, or the dates still give it away).
+    """
+    if "values" in params:
+        changes = dict(params["values"])
+        if not changes:
+            raise FaultParamError("tool_wrong_value: values is empty")
+    elif "path" in params and "value" in params:
+        changes = {params["path"]: params["value"]}
+    else:
+        raise FaultParamError("tool_wrong_value: needs path and value, or values")
+    for path, new in changes.items():
+        holder, key = _walk(value, path)
+        holder[key] = new
     return value
 
 
@@ -155,17 +169,26 @@ def _set_field(value: Value, params: Mapping[str, Any]) -> Value:
 
 
 def _hallucinated_claim(value: Value, params: Mapping[str, Any]) -> Value:
-    """Add a fabricated fact: appended to a text field, or added to a list field."""
+    """Add a fabricated fact: appended to a text field, or added to a list field.
+
+    `mode="replace"` makes the claim the whole text instead: a fabricated rationale. An
+    appended claim sits next to the agent's correct reasoning, and readers downstream
+    follow the reasoning (P4-T4 measured this); a replaced one has nothing contradicting it.
+    """
     field = params["field"]
+    mode = params.get("mode", "append")
+    if mode not in ("append", "replace"):
+        raise FaultParamError(f"hallucinated_claim: unknown mode {mode!r}")
     if field not in value:
         raise FaultParamError(f"hallucinated_claim: output has no field {field!r}")
     current = value[field]
-    if isinstance(current, list):
+    if isinstance(current, list) and mode == "append":
         value[field] = [*current, params["claim"]]
     elif isinstance(current, str):
-        value[field] = f"{current.rstrip()} {params['claim']}".strip()
+        appended = f"{current.rstrip()} {params['claim']}".strip()
+        value[field] = params["claim"] if mode == "replace" else appended
     else:
-        raise FaultParamError(f"hallucinated_claim: {field!r} is not text or a list")
+        raise FaultParamError(f"hallucinated_claim: {field!r} cannot take a {mode} claim")
     return value
 
 
@@ -195,9 +218,8 @@ INJECTORS: dict[str, Injector] = {
         Injector(
             "tool_wrong_value",
             ("tool",),
-            "A tool returns a wrong value in one field.",
+            "A tool returns a wrong value in one field (or a consistent set of fields).",
             _tool_wrong_value,
-            required=("path", "value"),
         ),
         Injector(
             "tool_malformed",
@@ -216,7 +238,7 @@ INJECTORS: dict[str, Injector] = {
         Injector(
             "hallucinated_claim",
             ("agent",),
-            "An agent's output includes a fabricated fact.",
+            "An agent's output includes a fabricated fact (added, or replacing the text).",
             _hallucinated_claim,
             required=("field", "claim"),
         ),

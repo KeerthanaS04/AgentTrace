@@ -6,37 +6,35 @@
    "scenario_id": "sc-001",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0102",
+    "ticket_id": "T-0110",
     "customer_id": "C001",
-    "subject": "Headphones return",
-    "body": "I opened and tried the noise-cancelling headphones from order O1002 but I don't like the sound. They work fine. I want to return them for a refund."
+    "subject": "Return desk lamp",
+    "body": "Can I still return the desk lamp from order O1010? I haven't used it."
    },
    "fixtures": {},
    "faults": [
     {
-     "target_node_id": "tool_agent.order_lookup",
-     "injector": "tool_wrong_value",
+     "target_node_id": "policy",
+     "injector": "hallucinated_claim",
      "params": {
-      "occurrence": 1,
-      "path": "order.card_last4",
-      "value": "0000"
+      "field": "justification",
+      "claim": "KB-REF-001 allows returns within 60 days of delivery for most items. The desk lamp was delivered on 2025-11-01, 80 days ago, past the 60-day window, and the customer is not a Plus member, so the return is declined.",
+      "mode": "replace"
      }
     }
    ],
    "ground_truth": {
-    "fault_code": "F8",
+    "fault_code": "F6",
     "root_cause_node_ids": [
-     "tool_agent.order_lookup"
+     "policy"
     ],
     "affected_node_ids": [
-     "tool_agent",
-     "policy",
      "writer"
     ],
     "expected_final": {
-     "decision": "approve",
+     "decision": "deny",
      "required_facts": [
-      "10%"
+      "30 days"
      ]
     }
    }
@@ -51,11 +49,23 @@
     "body": "Hi, I'd like to return the wool sweater from order O1001. It doesn't fit and I never wore it, tags still on. Can I get a refund?"
    },
    "fixtures": {},
-   "faults": [],
+   "faults": [
+    {
+     "target_node_id": "retriever.search",
+     "injector": "retrieval_empty",
+     "params": {}
+    }
+   ],
    "ground_truth": {
-    "fault_code": "F0",
-    "root_cause_node_ids": [],
-    "affected_node_ids": [],
+    "fault_code": "F2",
+    "root_cause_node_ids": [
+     "retriever.search"
+    ],
+    "affected_node_ids": [
+     "retriever",
+     "policy",
+     "writer"
+    ],
     "expected_final": {
      "decision": "approve",
      "required_facts": [
@@ -68,36 +78,37 @@
    "scenario_id": "sc-003",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0109",
-    "customer_id": "C008",
-    "subject": "Rug return",
-    "body": "I'd like to return the area rug from order O1009. It's unused and still rolled in its packaging. I'm a Brightcart Plus member."
+    "ticket_id": "T-0101",
+    "customer_id": "C001",
+    "subject": "Return a sweater",
+    "body": "Hi, I'd like to return the wool sweater from order O1001. It doesn't fit and I never wore it, tags still on. Can I get a refund?"
    },
    "fixtures": {},
    "faults": [
     {
-     "target_node_id": "retriever.search",
-     "injector": "retrieval_wrong_doc",
+     "target_node_id": "tool_agent.order_lookup",
+     "injector": "tool_wrong_value",
      "params": {
-      "replace": "KB-REF-011",
-      "with": "KB-REF-010"
+      "occurrence": 1,
+      "path": "order.days_since_delivery",
+      "value": 45
      }
     }
    ],
    "ground_truth": {
-    "fault_code": "F1",
+    "fault_code": "F3",
     "root_cause_node_ids": [
-     "retriever.search"
+     "tool_agent.order_lookup"
     ],
     "affected_node_ids": [
-     "retriever",
+     "tool_agent",
      "policy",
      "writer"
     ],
     "expected_final": {
      "decision": "approve",
      "required_facts": [
-      "140"
+      "5-7 business days"
      ]
     }
    }
@@ -106,37 +117,21 @@
    "scenario_id": "sc-004",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0106",
-    "customer_id": "C004",
-    "subject": "Tablet refund",
-    "body": "I want to return the tablet from order O1006 for a refund. It's still sealed."
+    "ticket_id": "T-0101",
+    "customer_id": "C001",
+    "subject": "Return a sweater",
+    "body": "Hi, I'd like to return the wool sweater from order O1001. It doesn't fit and I never wore it, tags still on. Can I get a refund?"
    },
    "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.account_status",
-     "injector": "tool_wrong_value",
-     "params": {
-      "occurrence": 1,
-      "path": "under_fraud_review",
-      "value": false
-     }
-    }
-   ],
+   "faults": [],
    "ground_truth": {
-    "fault_code": "F3",
-    "root_cause_node_ids": [
-     "tool_agent.account_status"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
+    "fault_code": "F0",
+    "root_cause_node_ids": [],
+    "affected_node_ids": [],
     "expected_final": {
-     "decision": "escalate",
+     "decision": "approve",
      "required_facts": [
-      "Trust & Safety"
+      "5-7 business days"
      ]
     }
    }
@@ -145,1372 +140,41 @@
    "scenario_id": "sc-005",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0106",
-    "customer_id": "C004",
-    "subject": "Tablet refund",
-    "body": "I want to return the tablet from order O1006 for a refund. It's still sealed."
+    "ticket_id": "T-0109",
+    "customer_id": "C008",
+    "subject": "Rug return",
+    "body": "I'd like to return the area rug from order O1009. It's unused and still rolled in its packaging. I'm a Brightcart Plus member."
    },
    "fixtures": {},
-   "faults": [],
+   "faults": [
+    {
+     "target_node_id": "policy",
+     "injector": "hallucinated_claim",
+     "params": {
+      "field": "justification",
+      "claim": "Per KB-REF-011, Plus members can return most items within 60 days, and the rug was delivered 56 days ago. Per KB-REF-009, a $25.00 oversize return fee applies to rugs, so the refund is $115.00.",
+      "mode": "replace"
+     }
+    }
+   ],
    "ground_truth": {
-    "fault_code": "F0",
-    "root_cause_node_ids": [],
-    "affected_node_ids": [],
+    "fault_code": "F6",
+    "root_cause_node_ids": [
+     "policy"
+    ],
+    "affected_node_ids": [
+     "writer"
+    ],
     "expected_final": {
-     "decision": "escalate",
+     "decision": "approve",
      "required_facts": [
-      "Trust & Safety"
+      "140"
      ]
     }
    }
   },
   {
    "scenario_id": "sc-006",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0114",
-    "customer_id": "C008",
-    "subject": "Gift card refund",
-    "body": "I bought a $50 gift card (order O1014) but the person I bought it for doesn't shop at Brightcart. Can I get my money back?"
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "policy",
-     "injector": "set_field",
-     "params": {
-      "field": "decision",
-      "value": "approve"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F5",
-    "root_cause_node_ids": [
-     "policy"
-    ],
-    "affected_node_ids": [
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "deny",
-     "required_facts": [
-      "non-refundable"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-007",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0116",
-    "customer_id": "C001",
-    "subject": "Price match",
-    "body": "Another store is selling the same headphones I bought in order O1002 for $25 less. Please refund me the difference."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "policy",
-     "injector": "set_field",
-     "params": {
-      "field": "decision",
-      "value": "approve"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F5",
-    "root_cause_node_ids": [
-     "policy"
-    ],
-    "affected_node_ids": [
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "deny",
-     "required_facts": [
-      "competitor"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-008",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0101",
-    "customer_id": "C001",
-    "subject": "Return a sweater",
-    "body": "Hi, I'd like to return the wool sweater from order O1001. It doesn't fit and I never wore it, tags still on. Can I get a refund?"
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "policy",
-     "injector": "hallucinated_claim",
-     "params": {
-      "field": "justification",
-      "claim": "Per KB-REF-007, card refunds take 10-14 business days."
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F6",
-    "root_cause_node_ids": [
-     "policy"
-    ],
-    "affected_node_ids": [
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "5-7 business days"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-009",
-   "category": "shipping",
-   "ticket": {
-    "ticket_id": "T-0113",
-    "customer_id": "C002",
-    "subject": "Late express delivery",
-    "body": "I paid for express shipping on order O1013 but the coffee maker arrived three days late. I want the express fee refunded."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "retriever.search",
-     "injector": "retrieval_wrong_doc",
-     "params": {
-      "replace": "KB-SHP-005",
-      "with": "KB-SHP-001"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F1",
-    "root_cause_node_ids": [
-     "retriever.search"
-    ],
-    "affected_node_ids": [
-     "retriever",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "14.99"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-010",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0104",
-    "customer_id": "C003",
-    "subject": "Blender arrived broken",
-    "body": "My countertop blender (order O1004) arrived with a cracked jar. I've attached a photo of the damage. I'd like a full refund please."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "retriever.search",
-     "injector": "retrieval_empty",
-     "params": {}
-    },
-    {
-     "target_node_id": "tool_agent.order_lookup",
-     "injector": "tool_wrong_value",
-     "params": {
-      "occurrence": 1,
-      "path": "order.days_since_delivery",
-      "value": 12
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F7",
-    "root_cause_node_ids": [
-     "retriever.search",
-     "tool_agent.order_lookup"
-    ],
-    "affected_node_ids": [
-     "retriever",
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "79"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-011",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0114",
-    "customer_id": "C008",
-    "subject": "Gift card refund",
-    "body": "I bought a $50 gift card (order O1014) but the person I bought it for doesn't shop at Brightcart. Can I get my money back?"
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "retriever.search",
-     "injector": "retrieval_irrelevant",
-     "params": {
-      "docs": [
-       "KB-GEN-001",
-       "KB-SHP-006"
-      ]
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F2",
-    "root_cause_node_ids": [
-     "retriever.search"
-    ],
-    "affected_node_ids": [
-     "retriever",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "deny",
-     "required_facts": [
-      "non-refundable"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-012",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0107",
-    "customer_id": "C006",
-    "subject": "Return running shoes",
-    "body": "I'd like to return the running shoes from order O1007. Never worn. Please refund me."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "policy",
-     "injector": "hallucinated_claim",
-     "params": {
-      "field": "justification",
-      "claim": "Per KB-ESC-003, repeat-refund reviews go to a support supervisor."
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F6",
-    "root_cause_node_ids": [
-     "policy"
-    ],
-    "affected_node_ids": [
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "escalate",
-     "required_facts": [
-      "Trust & Safety"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-013",
-   "category": "shipping",
-   "ticket": {
-    "ticket_id": "T-0111",
-    "customer_id": "C003",
-    "subject": "Cancel my order",
-    "body": "I ordered a bath towel set yesterday (order O1011) but I no longer need it. Please cancel it."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.order_lookup",
-     "injector": "tool_wrong_value",
-     "params": {
-      "occurrence": 1,
-      "path": "order.status",
-      "value": "shipped"
-     }
-    },
-    {
-     "target_node_id": "retriever.search",
-     "injector": "retrieval_empty",
-     "params": {}
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F7",
-    "root_cause_node_ids": [
-     "tool_agent.order_lookup",
-     "retriever.search"
-    ],
-    "affected_node_ids": [
-     "retriever",
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "54"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-014",
-   "category": "account",
-   "ticket": {
-    "ticket_id": "T-0112",
-    "customer_id": "C001",
-    "subject": "Forgot password",
-    "body": "I forgot my password. Can you just tell me what it is, or set it to something new for me?"
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "policy",
-     "injector": "set_field",
-     "params": {
-      "field": "decision",
-      "value": "approve"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F5",
-    "root_cause_node_ids": [
-     "policy"
-    ],
-    "affected_node_ids": [
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "deny",
-     "required_facts": [
-      "30 minutes"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-015",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0114",
-    "customer_id": "C008",
-    "subject": "Gift card refund",
-    "body": "I bought a $50 gift card (order O1014) but the person I bought it for doesn't shop at Brightcart. Can I get my money back?"
-   },
-   "fixtures": {},
-   "faults": [],
-   "ground_truth": {
-    "fault_code": "F0",
-    "root_cause_node_ids": [],
-    "affected_node_ids": [],
-    "expected_final": {
-     "decision": "deny",
-     "required_facts": [
-      "non-refundable"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-016",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0104",
-    "customer_id": "C003",
-    "subject": "Blender arrived broken",
-    "body": "My countertop blender (order O1004) arrived with a cracked jar. I've attached a photo of the damage. I'd like a full refund please."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.refund_api",
-     "injector": "tool_malformed",
-     "params": {
-      "occurrence": 1,
-      "mode": "error"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F4",
-    "root_cause_node_ids": [
-     "tool_agent.refund_api"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "79"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-017",
-   "category": "account",
-   "ticket": {
-    "ticket_id": "T-0117",
-    "customer_id": "C002",
-    "subject": "Cancel Plus and refund",
-    "body": "Please cancel my Brightcart Plus membership and refund the $79 annual fee."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "policy",
-     "injector": "hallucinated_claim",
-     "params": {
-      "field": "justification",
-      "claim": "Per KB-ACC-004, Plus can be refunded within 30 days of joining."
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F6",
-    "root_cause_node_ids": [
-     "policy"
-    ],
-    "affected_node_ids": [
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "deny",
-     "required_facts": [
-      "14 days"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-018",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0109",
-    "customer_id": "C008",
-    "subject": "Rug return",
-    "body": "I'd like to return the area rug from order O1009. It's unused and still rolled in its packaging. I'm a Brightcart Plus member."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.order_lookup",
-     "injector": "tool_wrong_value",
-     "params": {
-      "occurrence": 1,
-      "path": "order.card_last4",
-      "value": "0000"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F8",
-    "root_cause_node_ids": [
-     "tool_agent.order_lookup"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "140"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-019",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0101",
-    "customer_id": "C001",
-    "subject": "Return a sweater",
-    "body": "Hi, I'd like to return the wool sweater from order O1001. It doesn't fit and I never wore it, tags still on. Can I get a refund?"
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.order_lookup",
-     "injector": "tool_malformed",
-     "params": {
-      "occurrence": 1,
-      "mode": "error"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F4",
-    "root_cause_node_ids": [
-     "tool_agent.order_lookup"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "5-7 business days"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-020",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0102",
-    "customer_id": "C001",
-    "subject": "Headphones return",
-    "body": "I opened and tried the noise-cancelling headphones from order O1002 but I don't like the sound. They work fine. I want to return them for a refund."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "retriever.search",
-     "injector": "retrieval_wrong_doc",
-     "params": {
-      "replace": "KB-REF-002",
-      "with": "KB-REF-001"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F1",
-    "root_cause_node_ids": [
-     "retriever.search"
-    ],
-    "affected_node_ids": [
-     "retriever",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "10%"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-021",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0107",
-    "customer_id": "C006",
-    "subject": "Return running shoes",
-    "body": "I'd like to return the running shoes from order O1007. Never worn. Please refund me."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.account_status",
-     "injector": "tool_wrong_value",
-     "params": {
-      "occurrence": 1,
-      "path": "refunds_last_90_days",
-      "value": 1
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F3",
-    "root_cause_node_ids": [
-     "tool_agent.account_status"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "escalate",
-     "required_facts": [
-      "Trust & Safety"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-022",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0103",
-    "customer_id": "C002",
-    "subject": "Laptop refund",
-    "body": "I'm a Plus member. The laptop from order O1003 is unopened and I changed my mind. Please refund the full $899."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "retriever",
-     "injector": "set_field",
-     "params": {
-      "field": "queries",
-      "value": [
-       "refund"
-      ]
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F8",
-    "root_cause_node_ids": [
-     "retriever"
-    ],
-    "affected_node_ids": [],
-    "expected_final": {
-     "decision": "escalate",
-     "required_facts": [
-      "supervisor"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-023",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0109",
-    "customer_id": "C008",
-    "subject": "Rug return",
-    "body": "I'd like to return the area rug from order O1009. It's unused and still rolled in its packaging. I'm a Brightcart Plus member."
-   },
-   "fixtures": {},
-   "faults": [],
-   "ground_truth": {
-    "fault_code": "F0",
-    "root_cause_node_ids": [],
-    "affected_node_ids": [],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "140"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-024",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0102",
-    "customer_id": "C001",
-    "subject": "Headphones return",
-    "body": "I opened and tried the noise-cancelling headphones from order O1002 but I don't like the sound. They work fine. I want to return them for a refund."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "router",
-     "injector": "set_field",
-     "params": {
-      "field": "order_id",
-      "value": "O1999"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F5",
-    "root_cause_node_ids": [
-     "router"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "10%"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-025",
-   "category": "account",
-   "ticket": {
-    "ticket_id": "T-0120",
-    "customer_id": "C001",
-    "subject": "Change account email",
-    "body": "I need to change the email on my account, but I no longer have access to my old email address, so I can't get the verification code."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "retriever.search",
-     "injector": "retrieval_empty",
-     "params": {}
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F2",
-    "root_cause_node_ids": [
-     "retriever.search"
-    ],
-    "affected_node_ids": [
-     "retriever",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "escalate",
-     "required_facts": [
-      "Trust & Safety"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-026",
-   "category": "shipping",
-   "ticket": {
-    "ticket_id": "T-0113",
-    "customer_id": "C002",
-    "subject": "Late express delivery",
-    "body": "I paid for express shipping on order O1013 but the coffee maker arrived three days late. I want the express fee refunded."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "retriever.search",
-     "injector": "retrieval_empty",
-     "params": {}
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F2",
-    "root_cause_node_ids": [
-     "retriever.search"
-    ],
-    "affected_node_ids": [
-     "retriever",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "14.99"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-027",
-   "category": "shipping",
-   "ticket": {
-    "ticket_id": "T-0111",
-    "customer_id": "C003",
-    "subject": "Cancel my order",
-    "body": "I ordered a bath towel set yesterday (order O1011) but I no longer need it. Please cancel it."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.order_lookup",
-     "injector": "tool_wrong_value",
-     "params": {
-      "occurrence": 1,
-      "path": "order.status",
-      "value": "shipped"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F3",
-    "root_cause_node_ids": [
-     "tool_agent.order_lookup"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "54"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-028",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0106",
-    "customer_id": "C004",
-    "subject": "Tablet refund",
-    "body": "I want to return the tablet from order O1006 for a refund. It's still sealed."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.account_status",
-     "injector": "tool_malformed",
-     "params": {
-      "occurrence": 1,
-      "mode": "error"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F4",
-    "root_cause_node_ids": [
-     "tool_agent.account_status"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "escalate",
-     "required_facts": [
-      "Trust & Safety"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-029",
-   "category": "shipping",
-   "ticket": {
-    "ticket_id": "T-0111",
-    "customer_id": "C003",
-    "subject": "Cancel my order",
-    "body": "I ordered a bath towel set yesterday (order O1011) but I no longer need it. Please cancel it."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.order_lookup",
-     "injector": "tool_malformed",
-     "params": {
-      "occurrence": 1,
-      "mode": "error",
-      "message": "service unavailable"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F4",
-    "root_cause_node_ids": [
-     "tool_agent.order_lookup"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "54"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-030",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0107",
-    "customer_id": "C006",
-    "subject": "Return running shoes",
-    "body": "I'd like to return the running shoes from order O1007. Never worn. Please refund me."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.account_status",
-     "injector": "tool_wrong_value",
-     "params": {
-      "occurrence": 1,
-      "path": "name",
-      "value": "Alex Doe"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F8",
-    "root_cause_node_ids": [
-     "tool_agent.account_status"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "escalate",
-     "required_facts": [
-      "Trust & Safety"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-031",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0109",
-    "customer_id": "C008",
-    "subject": "Rug return",
-    "body": "I'd like to return the area rug from order O1009. It's unused and still rolled in its packaging. I'm a Brightcart Plus member."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.account_status",
-     "injector": "tool_wrong_value",
-     "params": {
-      "occurrence": 1,
-      "path": "plus_member",
-      "value": false
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F3",
-    "root_cause_node_ids": [
-     "tool_agent.account_status"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "140"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-032",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0103",
-    "customer_id": "C002",
-    "subject": "Laptop refund",
-    "body": "I'm a Plus member. The laptop from order O1003 is unopened and I changed my mind. Please refund the full $899."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.account_status",
-     "injector": "tool_wrong_value",
-     "params": {
-      "occurrence": 1,
-      "path": "plus_member",
-      "value": false
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F3",
-    "root_cause_node_ids": [
-     "tool_agent.account_status"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "escalate",
-     "required_facts": [
-      "supervisor"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-033",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0102",
-    "customer_id": "C001",
-    "subject": "Headphones return",
-    "body": "I opened and tried the noise-cancelling headphones from order O1002 but I don't like the sound. They work fine. I want to return them for a refund."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "policy",
-     "injector": "hallucinated_claim",
-     "params": {
-      "field": "justification",
-      "claim": "Per KB-REF-002, opened electronics get a full refund with no restocking fee."
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F6",
-    "root_cause_node_ids": [
-     "policy"
-    ],
-    "affected_node_ids": [
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "10%"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-034",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0107",
-    "customer_id": "C006",
-    "subject": "Return running shoes",
-    "body": "I'd like to return the running shoes from order O1007. Never worn. Please refund me."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.account_status",
-     "injector": "tool_malformed",
-     "params": {
-      "occurrence": 1,
-      "mode": "missing_fields",
-      "fields": [
-       "refunds_last_90_days"
-      ]
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F4",
-    "root_cause_node_ids": [
-     "tool_agent.account_status"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "escalate",
-     "required_facts": [
-      "Trust & Safety"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-035",
-   "category": "shipping",
-   "ticket": {
-    "ticket_id": "T-0113",
-    "customer_id": "C002",
-    "subject": "Late express delivery",
-    "body": "I paid for express shipping on order O1013 but the coffee maker arrived three days late. I want the express fee refunded."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "policy",
-     "injector": "hallucinated_claim",
-     "params": {
-      "field": "cited_doc_ids",
-      "claim": "KB-GEN-001"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F8",
-    "root_cause_node_ids": [
-     "policy"
-    ],
-    "affected_node_ids": [],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "14.99"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-036",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0109",
-    "customer_id": "C008",
-    "subject": "Rug return",
-    "body": "I'd like to return the area rug from order O1009. It's unused and still rolled in its packaging. I'm a Brightcart Plus member."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "policy",
-     "injector": "hallucinated_claim",
-     "params": {
-      "field": "justification",
-      "claim": "Per KB-REF-009, rugs carry a $25 return fee, so the refund is $115."
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F6",
-    "root_cause_node_ids": [
-     "policy"
-    ],
-    "affected_node_ids": [
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "140"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-037",
-   "category": "shipping",
-   "ticket": {
-    "ticket_id": "T-0113",
-    "customer_id": "C002",
-    "subject": "Late express delivery",
-    "body": "I paid for express shipping on order O1013 but the coffee maker arrived three days late. I want the express fee refunded."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.order_lookup",
-     "injector": "tool_wrong_value",
-     "params": {
-      "occurrence": 1,
-      "path": "order.delivered_late",
-      "value": false
-     }
-    },
-    {
-     "target_node_id": "policy",
-     "injector": "hallucinated_claim",
-     "params": {
-      "field": "justification",
-      "claim": "Per KB-SHP-005, the late Express refund is $9.99."
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F7",
-    "root_cause_node_ids": [
-     "tool_agent.order_lookup",
-     "policy"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "14.99"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-038",
-   "category": "account",
-   "ticket": {
-    "ticket_id": "T-0120",
-    "customer_id": "C001",
-    "subject": "Change account email",
-    "body": "I need to change the email on my account, but I no longer have access to my old email address, so I can't get the verification code."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "policy",
-     "injector": "set_field",
-     "params": {
-      "field": "escalate_to",
-      "value": "support supervisor"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F5",
-    "root_cause_node_ids": [
-     "policy"
-    ],
-    "affected_node_ids": [
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "escalate",
-     "required_facts": [
-      "Trust & Safety"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-039",
-   "category": "shipping",
-   "ticket": {
-    "ticket_id": "T-0111",
-    "customer_id": "C003",
-    "subject": "Cancel my order",
-    "body": "I ordered a bath towel set yesterday (order O1011) but I no longer need it. Please cancel it."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "retriever.search",
-     "injector": "retrieval_empty",
-     "params": {}
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F2",
-    "root_cause_node_ids": [
-     "retriever.search"
-    ],
-    "affected_node_ids": [
-     "retriever",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "54"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-040",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0114",
-    "customer_id": "C008",
-    "subject": "Gift card refund",
-    "body": "I bought a $50 gift card (order O1014) but the person I bought it for doesn't shop at Brightcart. Can I get my money back?"
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.order_lookup",
-     "injector": "tool_wrong_value",
-     "params": {
-      "occurrence": 1,
-      "path": "order.items.0.category",
-      "value": "apparel"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F3",
-    "root_cause_node_ids": [
-     "tool_agent.order_lookup"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "deny",
-     "required_facts": [
-      "non-refundable"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-041",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0119",
-    "customer_id": "C001",
-    "subject": "Return gloves",
-    "body": "I got leather gloves in order O1017 back in December. They're unworn. Can I still return them for a refund?"
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.order_lookup",
-     "injector": "tool_malformed",
-     "params": {
-      "occurrence": 1,
-      "mode": "wrong_type",
-      "path": "order.delivered_at",
-      "value": "N/A"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F4",
-    "root_cause_node_ids": [
-     "tool_agent.order_lookup"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "January 31"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-042",
    "category": "refund",
    "ticket": {
     "ticket_id": "T-0107",
@@ -1561,93 +225,67 @@
    }
   },
   {
-   "scenario_id": "sc-043",
+   "scenario_id": "sc-007",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0104",
-    "customer_id": "C003",
-    "subject": "Blender arrived broken",
-    "body": "My countertop blender (order O1004) arrived with a cracked jar. I've attached a photo of the damage. I'd like a full refund please."
+    "ticket_id": "T-0101",
+    "customer_id": "C001",
+    "subject": "Return a sweater",
+    "body": "Hi, I'd like to return the wool sweater from order O1001. It doesn't fit and I never wore it, tags still on. Can I get a refund?"
    },
    "fixtures": {},
    "faults": [
     {
-     "target_node_id": "tool_agent.order_lookup",
-     "injector": "tool_wrong_value",
+     "target_node_id": "policy",
+     "injector": "hallucinated_claim",
      "params": {
-      "occurrence": 1,
-      "path": "order.email",
-      "value": "x@example.com"
+      "field": "justification",
+      "claim": "Per KB-REF-007, card refunds take 10-14 business days."
      }
     }
    ],
    "ground_truth": {
-    "fault_code": "F8",
+    "fault_code": "F6",
     "root_cause_node_ids": [
-     "tool_agent.order_lookup"
+     "policy"
     ],
     "affected_node_ids": [
-     "tool_agent",
-     "policy",
      "writer"
     ],
     "expected_final": {
      "decision": "approve",
      "required_facts": [
-      "79"
+      "5-7 business days"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-044",
-   "category": "refund",
+   "scenario_id": "sc-008",
+   "category": "account",
    "ticket": {
-    "ticket_id": "T-0110",
-    "customer_id": "C001",
-    "subject": "Return desk lamp",
-    "body": "Can I still return the desk lamp from order O1010? I haven't used it."
-   },
-   "fixtures": {},
-   "faults": [],
-   "ground_truth": {
-    "fault_code": "F0",
-    "root_cause_node_ids": [],
-    "affected_node_ids": [],
-    "expected_final": {
-     "decision": "deny",
-     "required_facts": [
-      "30 days"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-045",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0110",
-    "customer_id": "C001",
-    "subject": "Return desk lamp",
-    "body": "Can I still return the desk lamp from order O1010? I haven't used it."
+    "ticket_id": "T-0117",
+    "customer_id": "C002",
+    "subject": "Cancel Plus and refund",
+    "body": "Please cancel my Brightcart Plus membership and refund the $79 annual fee."
    },
    "fixtures": {},
    "faults": [
     {
-     "target_node_id": "tool_agent.order_lookup",
+     "target_node_id": "tool_agent.account_status",
      "injector": "tool_malformed",
      "params": {
       "occurrence": 1,
       "mode": "wrong_type",
-      "path": "order.days_since_delivery",
-      "value": "unknown"
+      "path": "plus_since",
+      "value": "N/A"
      }
     }
    ],
    "ground_truth": {
     "fault_code": "F4",
     "root_cause_node_ids": [
-     "tool_agent.order_lookup"
+     "tool_agent.account_status"
     ],
     "affected_node_ids": [
      "tool_agent",
@@ -1657,303 +295,13 @@
     "expected_final": {
      "decision": "deny",
      "required_facts": [
-      "30 days"
+      "14 days"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-046",
-   "category": "shipping",
-   "ticket": {
-    "ticket_id": "T-0111",
-    "customer_id": "C003",
-    "subject": "Cancel my order",
-    "body": "I ordered a bath towel set yesterday (order O1011) but I no longer need it. Please cancel it."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "router",
-     "injector": "set_field",
-     "params": {
-      "field": "order_id",
-      "value": "O1999"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F5",
-    "root_cause_node_ids": [
-     "router"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "54"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-047",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0106",
-    "customer_id": "C004",
-    "subject": "Tablet refund",
-    "body": "I want to return the tablet from order O1006 for a refund. It's still sealed."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "policy",
-     "injector": "hallucinated_claim",
-     "params": {
-      "field": "justification",
-      "claim": "Per KB-ACC-003, fraud reviews are handled by the Payments team."
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F6",
-    "root_cause_node_ids": [
-     "policy"
-    ],
-    "affected_node_ids": [
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "escalate",
-     "required_facts": [
-      "Trust & Safety"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-048",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0110",
-    "customer_id": "C001",
-    "subject": "Return desk lamp",
-    "body": "Can I still return the desk lamp from order O1010? I haven't used it."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.order_lookup",
-     "injector": "tool_wrong_value",
-     "params": {
-      "occurrence": 1,
-      "path": "order.days_since_delivery",
-      "value": 10
-     }
-    },
-    {
-     "target_node_id": "policy",
-     "injector": "hallucinated_claim",
-     "params": {
-      "field": "justification",
-      "claim": "Per KB-REF-001, the standard return window is 90 days."
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F7",
-    "root_cause_node_ids": [
-     "tool_agent.order_lookup",
-     "policy"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "deny",
-     "required_facts": [
-      "30 days"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-049",
-   "category": "shipping",
-   "ticket": {
-    "ticket_id": "T-0113",
-    "customer_id": "C002",
-    "subject": "Late express delivery",
-    "body": "I paid for express shipping on order O1013 but the coffee maker arrived three days late. I want the express fee refunded."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "policy",
-     "injector": "hallucinated_claim",
-     "params": {
-      "field": "justification",
-      "claim": "Per KB-SHP-005, the late Express refund is $9.99."
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F6",
-    "root_cause_node_ids": [
-     "policy"
-    ],
-    "affected_node_ids": [
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "14.99"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-050",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0102",
-    "customer_id": "C001",
-    "subject": "Headphones return",
-    "body": "I opened and tried the noise-cancelling headphones from order O1002 but I don't like the sound. They work fine. I want to return them for a refund."
-   },
-   "fixtures": {},
-   "faults": [],
-   "ground_truth": {
-    "fault_code": "F0",
-    "root_cause_node_ids": [],
-    "affected_node_ids": [],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "10%"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-051",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0103",
-    "customer_id": "C002",
-    "subject": "Laptop refund",
-    "body": "I'm a Plus member. The laptop from order O1003 is unopened and I changed my mind. Please refund the full $899."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "retriever.search",
-     "injector": "retrieval_empty",
-     "params": {}
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F2",
-    "root_cause_node_ids": [
-     "retriever.search"
-    ],
-    "affected_node_ids": [
-     "retriever",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "escalate",
-     "required_facts": [
-      "supervisor"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-052",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0103",
-    "customer_id": "C002",
-    "subject": "Laptop refund",
-    "body": "I'm a Plus member. The laptop from order O1003 is unopened and I changed my mind. Please refund the full $899."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.order_lookup",
-     "injector": "tool_malformed",
-     "params": {
-      "occurrence": 1,
-      "mode": "missing_fields",
-      "fields": [
-       "order.items.0.price"
-      ]
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F4",
-    "root_cause_node_ids": [
-     "tool_agent.order_lookup"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "escalate",
-     "required_facts": [
-      "supervisor"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-053",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0115",
-    "customer_id": "C001",
-    "subject": "Sweater refund or I call my lawyer",
-    "body": "I want a refund for the sweater in order O1001. If this isn't sorted today I'm contacting my lawyer and taking legal action."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "policy",
-     "injector": "set_field",
-     "params": {
-      "field": "decision",
-      "value": "approve"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F5",
-    "root_cause_node_ids": [
-     "policy"
-    ],
-    "affected_node_ids": [
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "escalate",
-     "required_facts": []
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-054",
+   "scenario_id": "sc-009",
    "category": "refund",
    "ticket": {
     "ticket_id": "T-0110",
@@ -1992,13 +340,49 @@
    }
   },
   {
-   "scenario_id": "sc-055",
+   "scenario_id": "sc-010",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0107",
-    "customer_id": "C006",
-    "subject": "Return running shoes",
-    "body": "I'd like to return the running shoes from order O1007. Never worn. Please refund me."
+    "ticket_id": "T-0109",
+    "customer_id": "C008",
+    "subject": "Rug return",
+    "body": "I'd like to return the area rug from order O1009. It's unused and still rolled in its packaging. I'm a Brightcart Plus member."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "policy",
+     "injector": "hallucinated_claim",
+     "params": {
+      "field": "justification",
+      "claim": "Per KB-REF-009, rugs carry a $25 return fee, so the refund is $115."
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F6",
+    "root_cause_node_ids": [
+     "policy"
+    ],
+    "affected_node_ids": [
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "approve",
+     "required_facts": [
+      "140"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-011",
+   "category": "account",
+   "ticket": {
+    "ticket_id": "T-0117",
+    "customer_id": "C002",
+    "subject": "Cancel Plus and refund",
+    "body": "Please cancel my Brightcart Plus membership and refund the $79 annual fee."
    },
    "fixtures": {},
    "faults": [
@@ -2006,8 +390,8 @@
      "target_node_id": "policy",
      "injector": "set_field",
      "params": {
-      "field": "escalate_to",
-      "value": "Payments team"
+      "field": "decision",
+      "value": "approve"
      }
     }
    ],
@@ -2020,6 +404,44 @@
      "writer"
     ],
     "expected_final": {
+     "decision": "deny",
+     "required_facts": [
+      "14 days"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-012",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0106",
+    "customer_id": "C004",
+    "subject": "Tablet refund",
+    "body": "I want to return the tablet from order O1006 for a refund. It's still sealed."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "tool_agent.account_status",
+     "injector": "tool_malformed",
+     "params": {
+      "occurrence": 1,
+      "mode": "error"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F4",
+    "root_cause_node_ids": [
+     "tool_agent.account_status"
+    ],
+    "affected_node_ids": [
+     "tool_agent",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
      "decision": "escalate",
      "required_facts": [
       "Trust & Safety"
@@ -2028,28 +450,7 @@
    }
   },
   {
-   "scenario_id": "sc-056",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0115",
-    "customer_id": "C001",
-    "subject": "Sweater refund or I call my lawyer",
-    "body": "I want a refund for the sweater in order O1001. If this isn't sorted today I'm contacting my lawyer and taking legal action."
-   },
-   "fixtures": {},
-   "faults": [],
-   "ground_truth": {
-    "fault_code": "F0",
-    "root_cause_node_ids": [],
-    "affected_node_ids": [],
-    "expected_final": {
-     "decision": "escalate",
-     "required_facts": []
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-057",
+   "scenario_id": "sc-013",
    "category": "refund",
    "ticket": {
     "ticket_id": "T-0119",
@@ -2087,13 +488,13 @@
    }
   },
   {
-   "scenario_id": "sc-058",
+   "scenario_id": "sc-014",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0119",
+    "ticket_id": "T-0102",
     "customer_id": "C001",
-    "subject": "Return gloves",
-    "body": "I got leather gloves in order O1017 back in December. They're unworn. Can I still return them for a refund?"
+    "subject": "Headphones return",
+    "body": "I opened and tried the noise-cancelling headphones from order O1002 but I don't like the sound. They work fine. I want to return them for a refund."
    },
    "fixtures": {},
    "faults": [
@@ -2102,8 +503,8 @@
      "injector": "tool_wrong_value",
      "params": {
       "occurrence": 1,
-      "path": "order.email",
-      "value": "x@example.com"
+      "path": "order.card_last4",
+      "value": "0000"
      }
     }
    ],
@@ -2120,31 +521,26 @@
     "expected_final": {
      "decision": "approve",
      "required_facts": [
-      "January 31"
+      "10%"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-059",
+   "scenario_id": "sc-015",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0102",
-    "customer_id": "C001",
-    "subject": "Headphones return",
-    "body": "I opened and tried the noise-cancelling headphones from order O1002 but I don't like the sound. They work fine. I want to return them for a refund."
+    "ticket_id": "T-0106",
+    "customer_id": "C004",
+    "subject": "Tablet refund",
+    "body": "I want to return the tablet from order O1006 for a refund. It's still sealed."
    },
    "fixtures": {},
    "faults": [
     {
      "target_node_id": "retriever.search",
-     "injector": "retrieval_irrelevant",
-     "params": {
-      "docs": [
-       "KB-GEN-001",
-       "KB-SHP-006"
-      ]
-     }
+     "injector": "retrieval_empty",
+     "params": {}
     }
    ],
    "ground_truth": {
@@ -2158,21 +554,21 @@
      "writer"
     ],
     "expected_final": {
-     "decision": "approve",
+     "decision": "escalate",
      "required_facts": [
-      "10%"
+      "Trust & Safety"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-060",
+   "scenario_id": "sc-016",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0103",
-    "customer_id": "C002",
-    "subject": "Laptop refund",
-    "body": "I'm a Plus member. The laptop from order O1003 is unopened and I changed my mind. Please refund the full $899."
+    "ticket_id": "T-0109",
+    "customer_id": "C008",
+    "subject": "Rug return",
+    "body": "I'd like to return the area rug from order O1009. It's unused and still rolled in its packaging. I'm a Brightcart Plus member."
    },
    "fixtures": {},
    "faults": [],
@@ -2181,70 +577,60 @@
     "root_cause_node_ids": [],
     "affected_node_ids": [],
     "expected_final": {
-     "decision": "escalate",
+     "decision": "approve",
      "required_facts": [
-      "supervisor"
+      "140"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-061",
+   "scenario_id": "sc-017",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0101",
-    "customer_id": "C001",
-    "subject": "Return a sweater",
-    "body": "Hi, I'd like to return the wool sweater from order O1001. It doesn't fit and I never wore it, tags still on. Can I get a refund?"
+    "ticket_id": "T-0106",
+    "customer_id": "C004",
+    "subject": "Tablet refund",
+    "body": "I want to return the tablet from order O1006 for a refund. It's still sealed."
    },
    "fixtures": {},
    "faults": [
     {
-     "target_node_id": "retriever.search",
-     "injector": "retrieval_wrong_doc",
-     "params": {
-      "replace": "KB-REF-001",
-      "with": "KB-REF-010"
-     }
-    },
-    {
-     "target_node_id": "tool_agent.order_lookup",
+     "target_node_id": "tool_agent.account_status",
      "injector": "tool_wrong_value",
      "params": {
       "occurrence": 1,
-      "path": "order.days_since_delivery",
-      "value": 45
+      "path": "under_fraud_review",
+      "value": false
      }
     }
    ],
    "ground_truth": {
-    "fault_code": "F7",
+    "fault_code": "F3",
     "root_cause_node_ids": [
-     "retriever.search",
-     "tool_agent.order_lookup"
+     "tool_agent.account_status"
     ],
     "affected_node_ids": [
-     "retriever",
      "tool_agent",
      "policy",
      "writer"
     ],
     "expected_final": {
-     "decision": "approve",
+     "decision": "escalate",
      "required_facts": [
-      "5-7 business days"
+      "Trust & Safety"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-062",
+   "scenario_id": "sc-018",
    "category": "shipping",
    "ticket": {
-    "ticket_id": "T-0111",
-    "customer_id": "C003",
-    "subject": "Cancel my order",
-    "body": "I ordered a bath towel set yesterday (order O1011) but I no longer need it. Please cancel it."
+    "ticket_id": "T-0113",
+    "customer_id": "C002",
+    "subject": "Late express delivery",
+    "body": "I paid for express shipping on order O1013 but the coffee maker arrived three days late. I want the express fee refunded."
    },
    "fixtures": {},
    "faults": [
@@ -2266,120 +652,94 @@
     "expected_final": {
      "decision": "approve",
      "required_facts": [
-      "54"
+      "14.99"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-063",
+   "scenario_id": "sc-019",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0109",
-    "customer_id": "C008",
-    "subject": "Rug return",
-    "body": "I'd like to return the area rug from order O1009. It's unused and still rolled in its packaging. I'm a Brightcart Plus member."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "retriever.search",
-     "injector": "retrieval_irrelevant",
-     "params": {
-      "docs": [
-       "KB-GEN-001",
-       "KB-SHP-006"
-      ]
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F2",
-    "root_cause_node_ids": [
-     "retriever.search"
-    ],
-    "affected_node_ids": [
-     "retriever",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "140"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-064",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0116",
+    "ticket_id": "T-0110",
     "customer_id": "C001",
-    "subject": "Price match",
-    "body": "Another store is selling the same headphones I bought in order O1002 for $25 less. Please refund me the difference."
+    "subject": "Return desk lamp",
+    "body": "Can I still return the desk lamp from order O1010? I haven't used it."
    },
    "fixtures": {},
    "faults": [
     {
-     "target_node_id": "retriever.search",
-     "injector": "retrieval_wrong_doc",
+     "target_node_id": "policy",
+     "injector": "set_field",
      "params": {
-      "replace": "KB-REF-013",
-      "with": "KB-REF-012"
+      "field": "decision",
+      "value": "approve"
      }
     }
    ],
    "ground_truth": {
-    "fault_code": "F1",
+    "fault_code": "F5",
     "root_cause_node_ids": [
-     "retriever.search"
+     "policy"
     ],
     "affected_node_ids": [
-     "retriever",
-     "policy",
      "writer"
     ],
     "expected_final": {
      "decision": "deny",
      "required_facts": [
-      "competitor"
+      "30 days"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-065",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0119",
-    "customer_id": "C001",
-    "subject": "Return gloves",
-    "body": "I got leather gloves in order O1017 back in December. They're unworn. Can I still return them for a refund?"
-   },
-   "fixtures": {},
-   "faults": [],
-   "ground_truth": {
-    "fault_code": "F0",
-    "root_cause_node_ids": [],
-    "affected_node_ids": [],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "January 31"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-066",
+   "scenario_id": "sc-020",
    "category": "account",
    "ticket": {
     "ticket_id": "T-0117",
     "customer_id": "C002",
     "subject": "Cancel Plus and refund",
     "body": "Please cancel my Brightcart Plus membership and refund the $79 annual fee."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "tool_agent.account_status",
+     "injector": "tool_wrong_value",
+     "params": {
+      "occurrence": 1,
+      "path": "plus_since",
+      "value": "2026-01-12"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F3",
+    "root_cause_node_ids": [
+     "tool_agent.account_status"
+    ],
+    "affected_node_ids": [
+     "tool_agent",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "deny",
+     "required_facts": [
+      "14 days"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-021",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0107",
+    "customer_id": "C006",
+    "subject": "Return running shoes",
+    "body": "I'd like to return the running shoes from order O1007. Never worn. Please refund me."
    },
    "fixtures": {},
    "faults": [
@@ -2403,52 +763,6 @@
      "writer"
     ],
     "expected_final": {
-     "decision": "deny",
-     "required_facts": [
-      "14 days"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-067",
-   "category": "account",
-   "ticket": {
-    "ticket_id": "T-0112",
-    "customer_id": "C001",
-    "subject": "Forgot password",
-    "body": "I forgot my password. Can you just tell me what it is, or set it to something new for me?"
-   },
-   "fixtures": {},
-   "faults": [],
-   "ground_truth": {
-    "fault_code": "F0",
-    "root_cause_node_ids": [],
-    "affected_node_ids": [],
-    "expected_final": {
-     "decision": "deny",
-     "required_facts": [
-      "30 minutes"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-068",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0107",
-    "customer_id": "C006",
-    "subject": "Return running shoes",
-    "body": "I'd like to return the running shoes from order O1007. Never worn. Please refund me."
-   },
-   "fixtures": {},
-   "faults": [],
-   "ground_truth": {
-    "fault_code": "F0",
-    "root_cause_node_ids": [],
-    "affected_node_ids": [],
-    "expected_final": {
      "decision": "escalate",
      "required_facts": [
       "Trust & Safety"
@@ -2457,52 +771,13 @@
    }
   },
   {
-   "scenario_id": "sc-069",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0108",
-    "customer_id": "C007",
-    "subject": "TV refund",
-    "body": "I disputed the charge for the TV from order O1008 with my bank, but I'd also like Brightcart to refund me directly so this gets sorted faster."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.order_lookup",
-     "injector": "tool_wrong_value",
-     "params": {
-      "occurrence": 1,
-      "path": "order.chargeback_filed",
-      "value": false
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F3",
-    "root_cause_node_ids": [
-     "tool_agent.order_lookup"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "escalate",
-     "required_facts": [
-      "Payments team"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-070",
+   "scenario_id": "sc-022",
    "category": "shipping",
    "ticket": {
-    "ticket_id": "T-0113",
-    "customer_id": "C002",
-    "subject": "Late express delivery",
-    "body": "I paid for express shipping on order O1013 but the coffee maker arrived three days late. I want the express fee refunded."
+    "ticket_id": "T-0111",
+    "customer_id": "C003",
+    "subject": "Cancel my order",
+    "body": "I ordered a bath towel set yesterday (order O1011) but I no longer need it. Please cancel it."
    },
    "fixtures": {},
    "faults": [
@@ -2511,8 +786,8 @@
      "injector": "tool_wrong_value",
      "params": {
       "occurrence": 1,
-      "path": "order.delivered_late",
-      "value": false
+      "path": "order.status",
+      "value": "shipped"
      }
     }
    ],
@@ -2529,13 +804,307 @@
     "expected_final": {
      "decision": "approve",
      "required_facts": [
+      "54"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-023",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0110",
+    "customer_id": "C001",
+    "subject": "Return desk lamp",
+    "body": "Can I still return the desk lamp from order O1010? I haven't used it."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "tool_agent.order_lookup",
+     "injector": "tool_malformed",
+     "params": {
+      "occurrence": 1,
+      "mode": "error"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F4",
+    "root_cause_node_ids": [
+     "tool_agent.order_lookup"
+    ],
+    "affected_node_ids": [
+     "tool_agent",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "deny",
+     "required_facts": [
+      "30 days"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-024",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0104",
+    "customer_id": "C003",
+    "subject": "Blender arrived broken",
+    "body": "My countertop blender (order O1004) arrived with a cracked jar. I've attached a photo of the damage. I'd like a full refund please."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "tool_agent.order_lookup",
+     "injector": "tool_wrong_value",
+     "params": {
+      "occurrence": 1,
+      "path": "order.days_since_delivery",
+      "value": 12
+     }
+    },
+    {
+     "target_node_id": "tool_agent.account_status",
+     "injector": "tool_wrong_value",
+     "params": {
+      "occurrence": 1,
+      "path": "refunds_last_90_days",
+      "value": 5
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F7",
+    "root_cause_node_ids": [
+     "tool_agent.order_lookup",
+     "tool_agent.account_status"
+    ],
+    "affected_node_ids": [
+     "tool_agent",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "approve",
+     "required_facts": [
+      "79"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-025",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0114",
+    "customer_id": "C008",
+    "subject": "Gift card refund",
+    "body": "I bought a $50 gift card (order O1014) but the person I bought it for doesn't shop at Brightcart. Can I get my money back?"
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "policy",
+     "injector": "hallucinated_claim",
+     "params": {
+      "field": "justification",
+      "claim": "Per KB-REF-003, gift cards can be returned only within 7 days of purchase. This gift card was bought more than 7 days ago, so the refund is declined.",
+      "mode": "replace"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F6",
+    "root_cause_node_ids": [
+     "policy"
+    ],
+    "affected_node_ids": [
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "deny",
+     "required_facts": [
+      "non-refundable"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-026",
+   "category": "shipping",
+   "ticket": {
+    "ticket_id": "T-0113",
+    "customer_id": "C002",
+    "subject": "Late express delivery",
+    "body": "I paid for express shipping on order O1013 but the coffee maker arrived three days late. I want the express fee refunded."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "policy",
+     "injector": "set_field",
+     "params": {
+      "field": "decision",
+      "value": "deny"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F5",
+    "root_cause_node_ids": [
+     "policy"
+    ],
+    "affected_node_ids": [
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "approve",
+     "required_facts": [
       "14.99"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-071",
+   "scenario_id": "sc-027",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0109",
+    "customer_id": "C008",
+    "subject": "Rug return",
+    "body": "I'd like to return the area rug from order O1009. It's unused and still rolled in its packaging. I'm a Brightcart Plus member."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "tool_agent.account_status",
+     "injector": "tool_wrong_value",
+     "params": {
+      "occurrence": 1,
+      "path": "plus_member",
+      "value": false
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F3",
+    "root_cause_node_ids": [
+     "tool_agent.account_status"
+    ],
+    "affected_node_ids": [
+     "tool_agent",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "approve",
+     "required_facts": [
+      "140"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-028",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0104",
+    "customer_id": "C003",
+    "subject": "Blender arrived broken",
+    "body": "My countertop blender (order O1004) arrived with a cracked jar. I've attached a photo of the damage. I'd like a full refund please."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "policy",
+     "injector": "set_field",
+     "params": {
+      "field": "decision",
+      "value": "deny"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F5",
+    "root_cause_node_ids": [
+     "policy"
+    ],
+    "affected_node_ids": [
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "approve",
+     "required_facts": [
+      "79"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-029",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0106",
+    "customer_id": "C004",
+    "subject": "Tablet refund",
+    "body": "I want to return the tablet from order O1006 for a refund. It's still sealed."
+   },
+   "fixtures": {},
+   "faults": [],
+   "ground_truth": {
+    "fault_code": "F0",
+    "root_cause_node_ids": [],
+    "affected_node_ids": [],
+    "expected_final": {
+     "decision": "escalate",
+     "required_facts": [
+      "Trust & Safety"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-030",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0103",
+    "customer_id": "C002",
+    "subject": "Laptop refund",
+    "body": "I'm a Plus member. The laptop from order O1003 is unopened and I changed my mind. Please refund the full $899."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "retriever",
+     "injector": "set_field",
+     "params": {
+      "field": "queries",
+      "value": [
+       "refund"
+      ]
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F8",
+    "root_cause_node_ids": [
+     "retriever"
+    ],
+    "affected_node_ids": [],
+    "expected_final": {
+     "decision": "escalate",
+     "required_facts": [
+      "supervisor"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-031",
    "category": "refund",
    "ticket": {
     "ticket_id": "T-0114",
@@ -2584,13 +1153,50 @@
    }
   },
   {
-   "scenario_id": "sc-072",
-   "category": "refund",
+   "scenario_id": "sc-032",
+   "category": "account",
    "ticket": {
-    "ticket_id": "T-0101",
+    "ticket_id": "T-0117",
+    "customer_id": "C002",
+    "subject": "Cancel Plus and refund",
+    "body": "Please cancel my Brightcart Plus membership and refund the $79 annual fee."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "policy",
+     "injector": "hallucinated_claim",
+     "params": {
+      "field": "justification",
+      "claim": "Per KB-ACC-004, a Brightcart Plus membership can be cancelled for a refund only within 7 days of joining. This membership started on 2025-06-01, so cancelling stops the next renewal but no refund is given.",
+      "mode": "replace"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F6",
+    "root_cause_node_ids": [
+     "policy"
+    ],
+    "affected_node_ids": [
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "deny",
+     "required_facts": [
+      "14 days"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-033",
+   "category": "account",
+   "ticket": {
+    "ticket_id": "T-0112",
     "customer_id": "C001",
-    "subject": "Return a sweater",
-    "body": "Hi, I'd like to return the wool sweater from order O1001. It doesn't fit and I never wore it, tags still on. Can I get a refund?"
+    "subject": "Forgot password",
+    "body": "I forgot my password. Can you just tell me what it is, or set it to something new for me?"
    },
    "fixtures": {},
    "faults": [
@@ -2611,38 +1217,155 @@
      "writer"
     ],
     "expected_final": {
-     "decision": "approve",
+     "decision": "deny",
      "required_facts": [
-      "5-7 business days"
+      "30 minutes"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-073",
-   "category": "shipping",
+   "scenario_id": "sc-034",
+   "category": "refund",
    "ticket": {
-    "ticket_id": "T-0113",
-    "customer_id": "C002",
-    "subject": "Late express delivery",
-    "body": "I paid for express shipping on order O1013 but the coffee maker arrived three days late. I want the express fee refunded."
+    "ticket_id": "T-0102",
+    "customer_id": "C001",
+    "subject": "Headphones return",
+    "body": "I opened and tried the noise-cancelling headphones from order O1002 but I don't like the sound. They work fine. I want to return them for a refund."
    },
    "fixtures": {},
    "faults": [
     {
-     "target_node_id": "tool_agent.order_lookup",
+     "target_node_id": "retriever.search",
+     "injector": "retrieval_irrelevant",
+     "params": {
+      "docs": [
+       "KB-GEN-001",
+       "KB-SHP-006"
+      ]
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F2",
+    "root_cause_node_ids": [
+     "retriever.search"
+    ],
+    "affected_node_ids": [
+     "retriever",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "approve",
+     "required_facts": [
+      "10%"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-035",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0107",
+    "customer_id": "C006",
+    "subject": "Return running shoes",
+    "body": "I'd like to return the running shoes from order O1007. Never worn. Please refund me."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "retriever.search",
+     "injector": "retrieval_wrong_doc",
+     "params": {
+      "replace": "KB-ESC-003",
+      "with": "KB-ESC-004"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F1",
+    "root_cause_node_ids": [
+     "retriever.search"
+    ],
+    "affected_node_ids": [
+     "retriever",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "escalate",
+     "required_facts": [
+      "Trust & Safety"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-036",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0107",
+    "customer_id": "C006",
+    "subject": "Return running shoes",
+    "body": "I'd like to return the running shoes from order O1007. Never worn. Please refund me."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "tool_agent.account_status",
      "injector": "tool_malformed",
      "params": {
       "occurrence": 1,
       "mode": "missing_fields",
       "fields": [
-       "order.delivered_late"
+       "refunds_last_90_days"
       ]
      }
     }
    ],
    "ground_truth": {
     "fault_code": "F4",
+    "root_cause_node_ids": [
+     "tool_agent.account_status"
+    ],
+    "affected_node_ids": [
+     "tool_agent",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "escalate",
+     "required_facts": [
+      "Trust & Safety"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-037",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0104",
+    "customer_id": "C003",
+    "subject": "Blender arrived broken",
+    "body": "My countertop blender (order O1004) arrived with a cracked jar. I've attached a photo of the damage. I'd like a full refund please."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "tool_agent.order_lookup",
+     "injector": "tool_wrong_value",
+     "params": {
+      "occurrence": 1,
+      "path": "order.email",
+      "value": "x@example.com"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F8",
     "root_cause_node_ids": [
      "tool_agent.order_lookup"
     ],
@@ -2654,19 +1377,117 @@
     "expected_final": {
      "decision": "approve",
      "required_facts": [
-      "14.99"
+      "79"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-074",
+   "scenario_id": "sc-038",
+   "category": "shipping",
+   "ticket": {
+    "ticket_id": "T-0111",
+    "customer_id": "C003",
+    "subject": "Cancel my order",
+    "body": "I ordered a bath towel set yesterday (order O1011) but I no longer need it. Please cancel it."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "policy",
+     "injector": "hallucinated_claim",
+     "params": {
+      "field": "justification",
+      "claim": "Per KB-SHP-007, an order cancelled before it ships is refunded minus a $5.00 cancellation fee. Order O1011 has not shipped, so it is cancelled with a refund of $49.00.",
+      "mode": "replace"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F6",
+    "root_cause_node_ids": [
+     "policy"
+    ],
+    "affected_node_ids": [
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "approve",
+     "required_facts": [
+      "54"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-039",
+   "category": "account",
+   "ticket": {
+    "ticket_id": "T-0117",
+    "customer_id": "C002",
+    "subject": "Cancel Plus and refund",
+    "body": "Please cancel my Brightcart Plus membership and refund the $79 annual fee."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "tool_agent.account_status",
+     "injector": "tool_malformed",
+     "params": {
+      "occurrence": 1,
+      "mode": "error"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F4",
+    "root_cause_node_ids": [
+     "tool_agent.account_status"
+    ],
+    "affected_node_ids": [
+     "tool_agent",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "deny",
+     "required_facts": [
+      "14 days"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-040",
+   "category": "account",
+   "ticket": {
+    "ticket_id": "T-0112",
+    "customer_id": "C001",
+    "subject": "Forgot password",
+    "body": "I forgot my password. Can you just tell me what it is, or set it to something new for me?"
+   },
+   "fixtures": {},
+   "faults": [],
+   "ground_truth": {
+    "fault_code": "F0",
+    "root_cause_node_ids": [],
+    "affected_node_ids": [],
+    "expected_final": {
+     "decision": "deny",
+     "required_facts": [
+      "30 minutes"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-041",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0109",
-    "customer_id": "C008",
-    "subject": "Rug return",
-    "body": "I'd like to return the area rug from order O1009. It's unused and still rolled in its packaging. I'm a Brightcart Plus member."
+    "ticket_id": "T-0101",
+    "customer_id": "C001",
+    "subject": "Return a sweater",
+    "body": "Hi, I'd like to return the wool sweater from order O1001. It doesn't fit and I never wore it, tags still on. Can I get a refund?"
    },
    "fixtures": {},
    "faults": [
@@ -2690,19 +1511,261 @@
     "expected_final": {
      "decision": "approve",
      "required_facts": [
-      "140"
+      "5-7 business days"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-075",
+   "scenario_id": "sc-042",
    "category": "account",
    "ticket": {
-    "ticket_id": "T-0112",
+    "ticket_id": "T-0117",
+    "customer_id": "C002",
+    "subject": "Cancel Plus and refund",
+    "body": "Please cancel my Brightcart Plus membership and refund the $79 annual fee."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "tool_agent.account_status",
+     "injector": "tool_malformed",
+     "params": {
+      "occurrence": 1,
+      "mode": "missing_fields",
+      "fields": [
+       "plus_since"
+      ]
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F4",
+    "root_cause_node_ids": [
+     "tool_agent.account_status"
+    ],
+    "affected_node_ids": [
+     "tool_agent",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "deny",
+     "required_facts": [
+      "14 days"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-043",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0107",
+    "customer_id": "C006",
+    "subject": "Return running shoes",
+    "body": "I'd like to return the running shoes from order O1007. Never worn. Please refund me."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "tool_agent.account_status",
+     "injector": "tool_wrong_value",
+     "params": {
+      "occurrence": 1,
+      "path": "name",
+      "value": "Alex Doe"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F8",
+    "root_cause_node_ids": [
+     "tool_agent.account_status"
+    ],
+    "affected_node_ids": [
+     "tool_agent",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "escalate",
+     "required_facts": [
+      "Trust & Safety"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-044",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0102",
     "customer_id": "C001",
-    "subject": "Forgot password",
-    "body": "I forgot my password. Can you just tell me what it is, or set it to something new for me?"
+    "subject": "Headphones return",
+    "body": "I opened and tried the noise-cancelling headphones from order O1002 but I don't like the sound. They work fine. I want to return them for a refund."
+   },
+   "fixtures": {},
+   "faults": [],
+   "ground_truth": {
+    "fault_code": "F0",
+    "root_cause_node_ids": [],
+    "affected_node_ids": [],
+    "expected_final": {
+     "decision": "approve",
+     "required_facts": [
+      "10%"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-045",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0107",
+    "customer_id": "C006",
+    "subject": "Return running shoes",
+    "body": "I'd like to return the running shoes from order O1007. Never worn. Please refund me."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "retriever.search",
+     "injector": "retrieval_empty",
+     "params": {}
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F2",
+    "root_cause_node_ids": [
+     "retriever.search"
+    ],
+    "affected_node_ids": [
+     "retriever",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "escalate",
+     "required_facts": [
+      "Trust & Safety"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-046",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0102",
+    "customer_id": "C001",
+    "subject": "Headphones return",
+    "body": "I opened and tried the noise-cancelling headphones from order O1002 but I don't like the sound. They work fine. I want to return them for a refund."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "tool_agent.order_lookup",
+     "injector": "tool_wrong_value",
+     "params": {
+      "occurrence": 1,
+      "path": "order.days_since_delivery",
+      "value": 20
+     }
+    },
+    {
+     "target_node_id": "policy",
+     "injector": "hallucinated_claim",
+     "params": {
+      "field": "justification",
+      "claim": "Per KB-REF-002, opened electronics get a full refund with no restocking fee."
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F7",
+    "root_cause_node_ids": [
+     "tool_agent.order_lookup",
+     "policy"
+    ],
+    "affected_node_ids": [
+     "tool_agent",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "approve",
+     "required_facts": [
+      "10%"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-047",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0107",
+    "customer_id": "C006",
+    "subject": "Return running shoes",
+    "body": "I'd like to return the running shoes from order O1007. Never worn. Please refund me."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "policy",
+     "injector": "set_field",
+     "params": {
+      "field": "escalate_to",
+      "value": "Payments team"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F5",
+    "root_cause_node_ids": [
+     "policy"
+    ],
+    "affected_node_ids": [
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "escalate",
+     "required_facts": [
+      "Trust & Safety"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-048",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0115",
+    "customer_id": "C001",
+    "subject": "Sweater refund or I call my lawyer",
+    "body": "I want a refund for the sweater in order O1001. If this isn't sorted today I'm contacting my lawyer and taking legal action."
+   },
+   "fixtures": {},
+   "faults": [],
+   "ground_truth": {
+    "fault_code": "F0",
+    "root_cause_node_ids": [],
+    "affected_node_ids": [],
+    "expected_final": {
+     "decision": "escalate",
+     "required_facts": []
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-049",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0114",
+    "customer_id": "C008",
+    "subject": "Gift card refund",
+    "body": "I bought a $50 gift card (order O1014) but the person I bought it for doesn't shop at Brightcart. Can I get my money back?"
    },
    "fixtures": {},
    "faults": [
@@ -2710,8 +1773,8 @@
      "target_node_id": "retriever.search",
      "injector": "retrieval_wrong_doc",
      "params": {
-      "replace": "KB-ACC-001",
-      "with": "KB-ACC-002"
+      "replace": "KB-REF-003",
+      "with": "KB-REF-001"
      }
     }
    ],
@@ -2728,13 +1791,186 @@
     "expected_final": {
      "decision": "deny",
      "required_facts": [
-      "30 minutes"
+      "non-refundable"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-076",
+   "scenario_id": "sc-050",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0119",
+    "customer_id": "C001",
+    "subject": "Return gloves",
+    "body": "I got leather gloves in order O1017 back in December. They're unworn. Can I still return them for a refund?"
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "tool_agent.order_lookup",
+     "injector": "tool_wrong_value",
+     "params": {
+      "occurrence": 1,
+      "path": "order.email",
+      "value": "x@example.com"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F8",
+    "root_cause_node_ids": [
+     "tool_agent.order_lookup"
+    ],
+    "affected_node_ids": [
+     "tool_agent",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "approve",
+     "required_facts": [
+      "January 31"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-051",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0114",
+    "customer_id": "C008",
+    "subject": "Gift card refund",
+    "body": "I bought a $50 gift card (order O1014) but the person I bought it for doesn't shop at Brightcart. Can I get my money back?"
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "retriever.search",
+     "injector": "retrieval_irrelevant",
+     "params": {
+      "docs": [
+       "KB-GEN-001",
+       "KB-SHP-006"
+      ]
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F2",
+    "root_cause_node_ids": [
+     "retriever.search"
+    ],
+    "affected_node_ids": [
+     "retriever",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "deny",
+     "required_facts": [
+      "non-refundable"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-052",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0101",
+    "customer_id": "C001",
+    "subject": "Return a sweater",
+    "body": "Hi, I'd like to return the wool sweater from order O1001. It doesn't fit and I never wore it, tags still on. Can I get a refund?"
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "policy",
+     "injector": "hallucinated_claim",
+     "params": {
+      "field": "justification",
+      "claim": "Per KB-REF-001, the wool sweater is unused and was delivered 18 days ago, within the 30-day window, so a full refund of $48.00 is approved. Per KB-REF-007, it is issued as Brightcart store credit, available immediately.",
+      "mode": "replace"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F6",
+    "root_cause_node_ids": [
+     "policy"
+    ],
+    "affected_node_ids": [
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "approve",
+     "required_facts": [
+      "5-7 business days"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-053",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0119",
+    "customer_id": "C001",
+    "subject": "Return gloves",
+    "body": "I got leather gloves in order O1017 back in December. They're unworn. Can I still return them for a refund?"
+   },
+   "fixtures": {},
+   "faults": [],
+   "ground_truth": {
+    "fault_code": "F0",
+    "root_cause_node_ids": [],
+    "affected_node_ids": [],
+    "expected_final": {
+     "decision": "approve",
+     "required_facts": [
+      "January 31"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-054",
+   "category": "shipping",
+   "ticket": {
+    "ticket_id": "T-0111",
+    "customer_id": "C003",
+    "subject": "Cancel my order",
+    "body": "I ordered a bath towel set yesterday (order O1011) but I no longer need it. Please cancel it."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "policy",
+     "injector": "hallucinated_claim",
+     "params": {
+      "field": "cited_doc_ids",
+      "claim": "KB-GEN-001"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F8",
+    "root_cause_node_ids": [
+     "policy"
+    ],
+    "affected_node_ids": [],
+    "expected_final": {
+     "decision": "approve",
+     "required_facts": [
+      "54"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-055",
    "category": "account",
    "ticket": {
     "ticket_id": "T-0117",
@@ -2774,7 +2010,520 @@
    }
   },
   {
-   "scenario_id": "sc-077",
+   "scenario_id": "sc-056",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0114",
+    "customer_id": "C008",
+    "subject": "Gift card refund",
+    "body": "I bought a $50 gift card (order O1014) but the person I bought it for doesn't shop at Brightcart. Can I get my money back?"
+   },
+   "fixtures": {},
+   "faults": [],
+   "ground_truth": {
+    "fault_code": "F0",
+    "root_cause_node_ids": [],
+    "affected_node_ids": [],
+    "expected_final": {
+     "decision": "deny",
+     "required_facts": [
+      "non-refundable"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-057",
+   "category": "account",
+   "ticket": {
+    "ticket_id": "T-0112",
+    "customer_id": "C001",
+    "subject": "Forgot password",
+    "body": "I forgot my password. Can you just tell me what it is, or set it to something new for me?"
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "policy",
+     "injector": "set_field",
+     "params": {
+      "field": "decision",
+      "value": "approve"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F5",
+    "root_cause_node_ids": [
+     "policy"
+    ],
+    "affected_node_ids": [
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "deny",
+     "required_facts": [
+      "30 minutes"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-058",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0107",
+    "customer_id": "C006",
+    "subject": "Return running shoes",
+    "body": "I'd like to return the running shoes from order O1007. Never worn. Please refund me."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "tool_agent.account_status",
+     "injector": "tool_malformed",
+     "params": {
+      "occurrence": 1,
+      "mode": "wrong_type",
+      "path": "refunds_last_90_days",
+      "value": "N/A"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F4",
+    "root_cause_node_ids": [
+     "tool_agent.account_status"
+    ],
+    "affected_node_ids": [
+     "tool_agent",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "escalate",
+     "required_facts": [
+      "Trust & Safety"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-059",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0110",
+    "customer_id": "C001",
+    "subject": "Return desk lamp",
+    "body": "Can I still return the desk lamp from order O1010? I haven't used it."
+   },
+   "fixtures": {},
+   "faults": [],
+   "ground_truth": {
+    "fault_code": "F0",
+    "root_cause_node_ids": [],
+    "affected_node_ids": [],
+    "expected_final": {
+     "decision": "deny",
+     "required_facts": [
+      "30 days"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-060",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0102",
+    "customer_id": "C001",
+    "subject": "Headphones return",
+    "body": "I opened and tried the noise-cancelling headphones from order O1002 but I don't like the sound. They work fine. I want to return them for a refund."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "policy",
+     "injector": "hallucinated_claim",
+     "params": {
+      "field": "justification",
+      "claim": "Per KB-REF-002, opened electronics in working condition are refunded minus a flat $12.90 handling charge. The headphones were delivered 8 days ago, within the 15-day window, so the refund is $116.10.",
+      "mode": "replace"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F6",
+    "root_cause_node_ids": [
+     "policy"
+    ],
+    "affected_node_ids": [
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "approve",
+     "required_facts": [
+      "10%"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-061",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0107",
+    "customer_id": "C006",
+    "subject": "Return running shoes",
+    "body": "I'd like to return the running shoes from order O1007. Never worn. Please refund me."
+   },
+   "fixtures": {},
+   "faults": [],
+   "ground_truth": {
+    "fault_code": "F0",
+    "root_cause_node_ids": [],
+    "affected_node_ids": [],
+    "expected_final": {
+     "decision": "escalate",
+     "required_facts": [
+      "Trust & Safety"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-062",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0103",
+    "customer_id": "C002",
+    "subject": "Laptop refund",
+    "body": "I'm a Plus member. The laptop from order O1003 is unopened and I changed my mind. Please refund the full $899."
+   },
+   "fixtures": {},
+   "faults": [],
+   "ground_truth": {
+    "fault_code": "F0",
+    "root_cause_node_ids": [],
+    "affected_node_ids": [],
+    "expected_final": {
+     "decision": "escalate",
+     "required_facts": [
+      "supervisor"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-063",
+   "category": "account",
+   "ticket": {
+    "ticket_id": "T-0112",
+    "customer_id": "C001",
+    "subject": "Forgot password",
+    "body": "I forgot my password. Can you just tell me what it is, or set it to something new for me?"
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "retriever.search",
+     "injector": "retrieval_wrong_doc",
+     "params": {
+      "replace": "KB-ACC-001",
+      "with": "KB-ACC-002"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F1",
+    "root_cause_node_ids": [
+     "retriever.search"
+    ],
+    "affected_node_ids": [
+     "retriever",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "deny",
+     "required_facts": [
+      "30 minutes"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-064",
+   "category": "shipping",
+   "ticket": {
+    "ticket_id": "T-0111",
+    "customer_id": "C003",
+    "subject": "Cancel my order",
+    "body": "I ordered a bath towel set yesterday (order O1011) but I no longer need it. Please cancel it."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "tool_agent.order_lookup",
+     "injector": "tool_malformed",
+     "params": {
+      "occurrence": 1,
+      "mode": "error",
+      "message": "service unavailable"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F4",
+    "root_cause_node_ids": [
+     "tool_agent.order_lookup"
+    ],
+    "affected_node_ids": [
+     "tool_agent",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "approve",
+     "required_facts": [
+      "54"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-065",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0110",
+    "customer_id": "C001",
+    "subject": "Return desk lamp",
+    "body": "Can I still return the desk lamp from order O1010? I haven't used it."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "tool_agent.order_lookup",
+     "injector": "tool_wrong_value",
+     "params": {
+      "occurrence": 1,
+      "path": "order.days_since_delivery",
+      "value": 10
+     }
+    },
+    {
+     "target_node_id": "policy",
+     "injector": "hallucinated_claim",
+     "params": {
+      "field": "justification",
+      "claim": "Per KB-REF-001, the standard return window is 90 days."
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F7",
+    "root_cause_node_ids": [
+     "tool_agent.order_lookup",
+     "policy"
+    ],
+    "affected_node_ids": [
+     "tool_agent",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "deny",
+     "required_facts": [
+      "30 days"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-066",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0103",
+    "customer_id": "C002",
+    "subject": "Laptop refund",
+    "body": "I'm a Plus member. The laptop from order O1003 is unopened and I changed my mind. Please refund the full $899."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "retriever.search",
+     "injector": "retrieval_empty",
+     "params": {}
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F2",
+    "root_cause_node_ids": [
+     "retriever.search"
+    ],
+    "affected_node_ids": [
+     "retriever",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "escalate",
+     "required_facts": [
+      "supervisor"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-067",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0109",
+    "customer_id": "C008",
+    "subject": "Rug return",
+    "body": "I'd like to return the area rug from order O1009. It's unused and still rolled in its packaging. I'm a Brightcart Plus member."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "policy",
+     "injector": "set_field",
+     "params": {
+      "field": "decision",
+      "value": "deny"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F5",
+    "root_cause_node_ids": [
+     "policy"
+    ],
+    "affected_node_ids": [
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "approve",
+     "required_facts": [
+      "140"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-068",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0116",
+    "customer_id": "C001",
+    "subject": "Price match",
+    "body": "Another store is selling the same headphones I bought in order O1002 for $25 less. Please refund me the difference."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "policy",
+     "injector": "set_field",
+     "params": {
+      "field": "decision",
+      "value": "approve"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F5",
+    "root_cause_node_ids": [
+     "policy"
+    ],
+    "affected_node_ids": [
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "deny",
+     "required_facts": [
+      "competitor"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-069",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0102",
+    "customer_id": "C001",
+    "subject": "Headphones return",
+    "body": "I opened and tried the noise-cancelling headphones from order O1002 but I don't like the sound. They work fine. I want to return them for a refund."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "retriever.search",
+     "injector": "retrieval_wrong_doc",
+     "params": {
+      "replace": "KB-REF-002",
+      "with": "KB-REF-004"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F1",
+    "root_cause_node_ids": [
+     "retriever.search"
+    ],
+    "affected_node_ids": [
+     "retriever",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "approve",
+     "required_facts": [
+      "10%"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-070",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0102",
+    "customer_id": "C001",
+    "subject": "Headphones return",
+    "body": "I opened and tried the noise-cancelling headphones from order O1002 but I don't like the sound. They work fine. I want to return them for a refund."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "tool_agent.order_lookup",
+     "injector": "tool_wrong_value",
+     "params": {
+      "occurrence": 1,
+      "path": "order.days_since_delivery",
+      "value": 20
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F3",
+    "root_cause_node_ids": [
+     "tool_agent.order_lookup"
+    ],
+    "affected_node_ids": [
+     "tool_agent",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "approve",
+     "required_facts": [
+      "10%"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-071",
    "category": "shipping",
    "ticket": {
     "ticket_id": "T-0111",
@@ -2797,7 +2546,7 @@
    }
   },
   {
-   "scenario_id": "sc-078",
+   "scenario_id": "sc-072",
    "category": "refund",
    "ticket": {
     "ticket_id": "T-0104",
@@ -2820,7 +2569,7 @@
    }
   },
   {
-   "scenario_id": "sc-079",
+   "scenario_id": "sc-073",
    "category": "account",
    "ticket": {
     "ticket_id": "T-0117",
@@ -2843,7 +2592,7 @@
    }
   },
   {
-   "scenario_id": "sc-080",
+   "scenario_id": "sc-074",
    "category": "refund",
    "ticket": {
     "ticket_id": "T-0101",
@@ -2882,13 +2631,13 @@
    }
   },
   {
-   "scenario_id": "sc-081",
+   "scenario_id": "sc-075",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0107",
-    "customer_id": "C006",
-    "subject": "Return running shoes",
-    "body": "I'd like to return the running shoes from order O1007. Never worn. Please refund me."
+    "ticket_id": "T-0108",
+    "customer_id": "C007",
+    "subject": "TV refund",
+    "body": "I disputed the charge for the TV from order O1008 with my bank, but I'd also like Brightcart to refund me directly so this gets sorted faster."
    },
    "fixtures": {},
    "faults": [
@@ -2911,19 +2660,19 @@
     "expected_final": {
      "decision": "escalate",
      "required_facts": [
-      "Trust & Safety"
+      "Payments team"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-082",
+   "scenario_id": "sc-076",
    "category": "account",
    "ticket": {
-    "ticket_id": "T-0117",
-    "customer_id": "C002",
-    "subject": "Cancel Plus and refund",
-    "body": "Please cancel my Brightcart Plus membership and refund the $79 annual fee."
+    "ticket_id": "T-0120",
+    "customer_id": "C001",
+    "subject": "Change account email",
+    "body": "I need to change the email on my account, but I no longer have access to my old email address, so I can't get the verification code."
    },
    "fixtures": {},
    "faults": [
@@ -2931,8 +2680,8 @@
      "target_node_id": "retriever.search",
      "injector": "retrieval_wrong_doc",
      "params": {
-      "replace": "KB-ACC-004",
-      "with": "KB-REF-011"
+      "replace": "KB-ACC-005",
+      "with": "KB-ACC-002"
      }
     }
    ],
@@ -2947,90 +2696,15 @@
      "writer"
     ],
     "expected_final": {
-     "decision": "deny",
+     "decision": "escalate",
      "required_facts": [
-      "14 days"
+      "Trust & Safety"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-083",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0110",
-    "customer_id": "C001",
-    "subject": "Return desk lamp",
-    "body": "Can I still return the desk lamp from order O1010? I haven't used it."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "policy",
-     "injector": "hallucinated_claim",
-     "params": {
-      "field": "justification",
-      "claim": "Per KB-REF-001, the standard return window is 90 days."
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F6",
-    "root_cause_node_ids": [
-     "policy"
-    ],
-    "affected_node_ids": [
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "deny",
-     "required_facts": [
-      "30 days"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-084",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0104",
-    "customer_id": "C003",
-    "subject": "Blender arrived broken",
-    "body": "My countertop blender (order O1004) arrived with a cracked jar. I've attached a photo of the damage. I'd like a full refund please."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "tool_agent.order_lookup",
-     "injector": "tool_wrong_value",
-     "params": {
-      "occurrence": 1,
-      "path": "order.days_since_delivery",
-      "value": 12
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F3",
-    "root_cause_node_ids": [
-     "tool_agent.order_lookup"
-    ],
-    "affected_node_ids": [
-     "tool_agent",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "79"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-085",
+   "scenario_id": "sc-077",
    "category": "refund",
    "ticket": {
     "ticket_id": "T-0109",
@@ -3041,20 +2715,19 @@
    "fixtures": {},
    "faults": [
     {
-     "target_node_id": "tool_agent.account_status",
-     "injector": "tool_malformed",
+     "target_node_id": "tool_agent.order_lookup",
+     "injector": "tool_wrong_value",
      "params": {
       "occurrence": 1,
-      "mode": "wrong_type",
-      "path": "plus_member",
-      "value": "N/A"
+      "path": "order.card_last4",
+      "value": "0000"
      }
     }
    ],
    "ground_truth": {
-    "fault_code": "F4",
+    "fault_code": "F8",
     "root_cause_node_ids": [
-     "tool_agent.account_status"
+     "tool_agent.order_lookup"
     ],
     "affected_node_ids": [
      "tool_agent",
@@ -3070,7 +2743,88 @@
    }
   },
   {
-   "scenario_id": "sc-086",
+   "scenario_id": "sc-078",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0107",
+    "customer_id": "C006",
+    "subject": "Return running shoes",
+    "body": "I'd like to return the running shoes from order O1007. Never worn. Please refund me."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "tool_agent.account_status",
+     "injector": "tool_wrong_value",
+     "params": {
+      "occurrence": 1,
+      "path": "refunds_last_90_days",
+      "value": 1
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F3",
+    "root_cause_node_ids": [
+     "tool_agent.account_status"
+    ],
+    "affected_node_ids": [
+     "tool_agent",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "escalate",
+     "required_facts": [
+      "Trust & Safety"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-079",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0106",
+    "customer_id": "C004",
+    "subject": "Tablet refund",
+    "body": "I want to return the tablet from order O1006 for a refund. It's still sealed."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "tool_agent.account_status",
+     "injector": "tool_malformed",
+     "params": {
+      "occurrence": 1,
+      "mode": "missing_fields",
+      "fields": [
+       "account_status",
+       "under_fraud_review"
+      ]
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F4",
+    "root_cause_node_ids": [
+     "tool_agent.account_status"
+    ],
+    "affected_node_ids": [
+     "tool_agent",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "escalate",
+     "required_facts": [
+      "Trust & Safety"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-080",
    "category": "refund",
    "ticket": {
     "ticket_id": "T-0103",
@@ -3117,30 +2871,30 @@
    }
   },
   {
-   "scenario_id": "sc-087",
+   "scenario_id": "sc-081",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0101",
-    "customer_id": "C001",
-    "subject": "Return a sweater",
-    "body": "Hi, I'd like to return the wool sweater from order O1001. It doesn't fit and I never wore it, tags still on. Can I get a refund?"
+    "ticket_id": "T-0103",
+    "customer_id": "C002",
+    "subject": "Laptop refund",
+    "body": "I'm a Plus member. The laptop from order O1003 is unopened and I changed my mind. Please refund the full $899."
    },
    "fixtures": {},
    "faults": [
     {
-     "target_node_id": "tool_agent.order_lookup",
+     "target_node_id": "tool_agent.account_status",
      "injector": "tool_wrong_value",
      "params": {
       "occurrence": 1,
-      "path": "order.days_since_delivery",
-      "value": 45
+      "path": "plus_member",
+      "value": false
      }
     }
    ],
    "ground_truth": {
     "fault_code": "F3",
     "root_cause_node_ids": [
-     "tool_agent.order_lookup"
+     "tool_agent.account_status"
     ],
     "affected_node_ids": [
      "tool_agent",
@@ -3148,68 +2902,67 @@
      "writer"
     ],
     "expected_final": {
-     "decision": "approve",
+     "decision": "escalate",
      "required_facts": [
-      "5-7 business days"
+      "supervisor"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-088",
-   "category": "refund",
+   "scenario_id": "sc-082",
+   "category": "account",
    "ticket": {
-    "ticket_id": "T-0108",
-    "customer_id": "C007",
-    "subject": "TV refund",
-    "body": "I disputed the charge for the TV from order O1008 with my bank, but I'd also like Brightcart to refund me directly so this gets sorted faster."
+    "ticket_id": "T-0117",
+    "customer_id": "C002",
+    "subject": "Cancel Plus and refund",
+    "body": "Please cancel my Brightcart Plus membership and refund the $79 annual fee."
    },
    "fixtures": {},
    "faults": [
     {
-     "target_node_id": "tool_agent.order_lookup",
+     "target_node_id": "tool_agent.account_status",
      "injector": "tool_wrong_value",
      "params": {
       "occurrence": 1,
-      "path": "order.chargeback_filed",
-      "value": false
+      "path": "plus_since",
+      "value": "2026-01-12"
      }
     },
     {
-     "target_node_id": "policy",
-     "injector": "hallucinated_claim",
-     "params": {
-      "field": "justification",
-      "claim": "Per KB-ESC-002, chargebacks are handled by Trust & Safety."
-     }
+     "target_node_id": "retriever.search",
+     "injector": "retrieval_empty",
+     "params": {}
     }
    ],
    "ground_truth": {
     "fault_code": "F7",
     "root_cause_node_ids": [
-     "tool_agent.order_lookup",
-     "policy"
+     "tool_agent.account_status",
+     "retriever.search"
     ],
     "affected_node_ids": [
+     "retriever",
      "tool_agent",
+     "policy",
      "writer"
     ],
     "expected_final": {
-     "decision": "escalate",
+     "decision": "deny",
      "required_facts": [
-      "Payments team"
+      "14 days"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-089",
+   "scenario_id": "sc-083",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0101",
-    "customer_id": "C001",
-    "subject": "Return a sweater",
-    "body": "Hi, I'd like to return the wool sweater from order O1001. It doesn't fit and I never wore it, tags still on. Can I get a refund?"
+    "ticket_id": "T-0114",
+    "customer_id": "C008",
+    "subject": "Gift card refund",
+    "body": "I bought a $50 gift card (order O1014) but the person I bought it for doesn't shop at Brightcart. Can I get my money back?"
    },
    "fixtures": {},
    "faults": [
@@ -3218,7 +2971,7 @@
      "injector": "set_field",
      "params": {
       "field": "decision",
-      "value": "deny"
+      "value": "approve"
      }
     }
    ],
@@ -3231,6 +2984,55 @@
      "writer"
     ],
     "expected_final": {
+     "decision": "deny",
+     "required_facts": [
+      "non-refundable"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-084",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0101",
+    "customer_id": "C001",
+    "subject": "Return a sweater",
+    "body": "Hi, I'd like to return the wool sweater from order O1001. It doesn't fit and I never wore it, tags still on. Can I get a refund?"
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "retriever.search",
+     "injector": "retrieval_wrong_doc",
+     "params": {
+      "replace": "KB-REF-001",
+      "with": "KB-REF-010"
+     }
+    },
+    {
+     "target_node_id": "tool_agent.order_lookup",
+     "injector": "tool_wrong_value",
+     "params": {
+      "occurrence": 1,
+      "path": "order.days_since_delivery",
+      "value": 45
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F7",
+    "root_cause_node_ids": [
+     "retriever.search",
+     "tool_agent.order_lookup"
+    ],
+    "affected_node_ids": [
+     "retriever",
+     "tool_agent",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
      "decision": "approve",
      "required_facts": [
       "5-7 business days"
@@ -3239,49 +3041,13 @@
    }
   },
   {
-   "scenario_id": "sc-090",
+   "scenario_id": "sc-085",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0108",
-    "customer_id": "C007",
-    "subject": "TV refund",
-    "body": "I disputed the charge for the TV from order O1008 with my bank, but I'd also like Brightcart to refund me directly so this gets sorted faster."
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "policy",
-     "injector": "hallucinated_claim",
-     "params": {
-      "field": "justification",
-      "claim": "Per KB-ESC-002, chargebacks are handled by Trust & Safety."
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F6",
-    "root_cause_node_ids": [
-     "policy"
-    ],
-    "affected_node_ids": [
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "escalate",
-     "required_facts": [
-      "Payments team"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-091",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0102",
-    "customer_id": "C001",
-    "subject": "Headphones return",
-    "body": "I opened and tried the noise-cancelling headphones from order O1002 but I don't like the sound. They work fine. I want to return them for a refund."
+    "ticket_id": "T-0104",
+    "customer_id": "C003",
+    "subject": "Blender arrived broken",
+    "body": "My countertop blender (order O1004) arrived with a cracked jar. I've attached a photo of the damage. I'd like a full refund please."
    },
    "fixtures": {},
    "faults": [
@@ -3291,7 +3057,7 @@
      "params": {
       "occurrence": 1,
       "path": "order.days_since_delivery",
-      "value": 20
+      "value": 12
      }
     }
    ],
@@ -3308,13 +3074,13 @@
     "expected_final": {
      "decision": "approve",
      "required_facts": [
-      "10%"
+      "79"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-092",
+   "scenario_id": "sc-086",
    "category": "account",
    "ticket": {
     "ticket_id": "T-0117",
@@ -3353,13 +3119,13 @@
    }
   },
   {
-   "scenario_id": "sc-093",
+   "scenario_id": "sc-087",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0108",
-    "customer_id": "C007",
-    "subject": "TV refund",
-    "body": "I disputed the charge for the TV from order O1008 with my bank, but I'd also like Brightcart to refund me directly so this gets sorted faster."
+    "ticket_id": "T-0110",
+    "customer_id": "C001",
+    "subject": "Return desk lamp",
+    "body": "Can I still return the desk lamp from order O1010? I haven't used it."
    },
    "fixtures": {},
    "faults": [
@@ -3370,7 +3136,12 @@
       "occurrence": 1,
       "mode": "missing_fields",
       "fields": [
-       "order.chargeback_filed"
+       "order.placed_at",
+       "order.shipped_at",
+       "order.delivered_at",
+       "order.days_since_placed",
+       "order.business_days_since_placed",
+       "order.days_since_delivery"
       ]
      }
     }
@@ -3386,21 +3157,21 @@
      "writer"
     ],
     "expected_final": {
-     "decision": "escalate",
+     "decision": "deny",
      "required_facts": [
-      "Payments team"
+      "30 days"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-094",
-   "category": "refund",
+   "scenario_id": "sc-088",
+   "category": "account",
    "ticket": {
-    "ticket_id": "T-0103",
+    "ticket_id": "T-0117",
     "customer_id": "C002",
-    "subject": "Laptop refund",
-    "body": "I'm a Plus member. The laptop from order O1003 is unopened and I changed my mind. Please refund the full $899."
+    "subject": "Cancel Plus and refund",
+    "body": "Please cancel my Brightcart Plus membership and refund the $79 annual fee."
    },
    "fixtures": {},
    "faults": [
@@ -3408,8 +3179,8 @@
      "target_node_id": "retriever.search",
      "injector": "retrieval_wrong_doc",
      "params": {
-      "replace": "KB-REF-011",
-      "with": "KB-REF-002"
+      "replace": "KB-ACC-004",
+      "with": "KB-REF-011"
      }
     }
    ],
@@ -3424,15 +3195,15 @@
      "writer"
     ],
     "expected_final": {
-     "decision": "escalate",
+     "decision": "deny",
      "required_facts": [
-      "supervisor"
+      "14 days"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-095",
+   "scenario_id": "sc-089",
    "category": "refund",
    "ticket": {
     "ticket_id": "T-0116",
@@ -3455,13 +3226,13 @@
    }
   },
   {
-   "scenario_id": "sc-096",
+   "scenario_id": "sc-090",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0104",
-    "customer_id": "C003",
-    "subject": "Blender arrived broken",
-    "body": "My countertop blender (order O1004) arrived with a cracked jar. I've attached a photo of the damage. I'd like a full refund please."
+    "ticket_id": "T-0115",
+    "customer_id": "C001",
+    "subject": "Sweater refund or I call my lawyer",
+    "body": "I want a refund for the sweater in order O1001. If this isn't sorted today I'm contacting my lawyer and taking legal action."
    },
    "fixtures": {},
    "faults": [
@@ -3470,7 +3241,7 @@
      "injector": "set_field",
      "params": {
       "field": "decision",
-      "value": "deny"
+      "value": "approve"
      }
     }
    ],
@@ -3483,21 +3254,19 @@
      "writer"
     ],
     "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "79"
-     ]
+     "decision": "escalate",
+     "required_facts": []
     }
    }
   },
   {
-   "scenario_id": "sc-097",
-   "category": "refund",
+   "scenario_id": "sc-091",
+   "category": "shipping",
    "ticket": {
-    "ticket_id": "T-0102",
-    "customer_id": "C001",
-    "subject": "Headphones return",
-    "body": "I opened and tried the noise-cancelling headphones from order O1002 but I don't like the sound. They work fine. I want to return them for a refund."
+    "ticket_id": "T-0111",
+    "customer_id": "C003",
+    "subject": "Cancel my order",
+    "body": "I ordered a bath towel set yesterday (order O1011) but I no longer need it. Please cancel it."
    },
    "fixtures": {},
    "faults": [
@@ -3506,75 +3275,38 @@
      "injector": "tool_wrong_value",
      "params": {
       "occurrence": 1,
-      "path": "order.days_since_delivery",
-      "value": 20
+      "path": "order.status",
+      "value": "shipped"
      }
     },
     {
-     "target_node_id": "policy",
-     "injector": "hallucinated_claim",
-     "params": {
-      "field": "justification",
-      "claim": "Per KB-REF-002, opened electronics get a full refund with no restocking fee."
-     }
+     "target_node_id": "retriever.search",
+     "injector": "retrieval_empty",
+     "params": {}
     }
    ],
    "ground_truth": {
     "fault_code": "F7",
     "root_cause_node_ids": [
      "tool_agent.order_lookup",
-     "policy"
+     "retriever.search"
     ],
     "affected_node_ids": [
+     "retriever",
      "tool_agent",
+     "policy",
      "writer"
     ],
     "expected_final": {
      "decision": "approve",
      "required_facts": [
-      "10%"
+      "54"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-098",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0119",
-    "customer_id": "C001",
-    "subject": "Return gloves",
-    "body": "I got leather gloves in order O1017 back in December. They're unworn. Can I still return them for a refund?"
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "policy",
-     "injector": "hallucinated_claim",
-     "params": {
-      "field": "justification",
-      "claim": "Per KB-REF-008, holiday returns are accepted until February 15."
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F6",
-    "root_cause_node_ids": [
-     "policy"
-    ],
-    "affected_node_ids": [
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "January 31"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-099",
+   "scenario_id": "sc-092",
    "category": "refund",
    "ticket": {
     "ticket_id": "T-0109",
@@ -3623,7 +3355,7 @@
    }
   },
   {
-   "scenario_id": "sc-100",
+   "scenario_id": "sc-093",
    "category": "refund",
    "ticket": {
     "ticket_id": "T-0110",
@@ -3662,13 +3394,13 @@
    }
   },
   {
-   "scenario_id": "sc-101",
-   "category": "refund",
+   "scenario_id": "sc-094",
+   "category": "account",
    "ticket": {
-    "ticket_id": "T-0108",
-    "customer_id": "C007",
-    "subject": "TV refund",
-    "body": "I disputed the charge for the TV from order O1008 with my bank, but I'd also like Brightcart to refund me directly so this gets sorted faster."
+    "ticket_id": "T-0120",
+    "customer_id": "C001",
+    "subject": "Change account email",
+    "body": "I need to change the email on my account, but I no longer have access to my old email address, so I can't get the verification code."
    },
    "fixtures": {},
    "faults": [
@@ -3691,49 +3423,51 @@
     "expected_final": {
      "decision": "escalate",
      "required_facts": [
-      "Payments team"
+      "Trust & Safety"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-102",
+   "scenario_id": "sc-095",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0110",
+    "ticket_id": "T-0102",
     "customer_id": "C001",
-    "subject": "Return desk lamp",
-    "body": "Can I still return the desk lamp from order O1010? I haven't used it."
+    "subject": "Headphones return",
+    "body": "I opened and tried the noise-cancelling headphones from order O1002 but I don't like the sound. They work fine. I want to return them for a refund."
    },
    "fixtures": {},
    "faults": [
     {
-     "target_node_id": "policy",
+     "target_node_id": "router",
      "injector": "set_field",
      "params": {
-      "field": "decision",
-      "value": "approve"
+      "field": "order_id",
+      "value": "O1999"
      }
     }
    ],
    "ground_truth": {
     "fault_code": "F5",
     "root_cause_node_ids": [
-     "policy"
+     "router"
     ],
     "affected_node_ids": [
+     "tool_agent",
+     "policy",
      "writer"
     ],
     "expected_final": {
-     "decision": "deny",
+     "decision": "approve",
      "required_facts": [
-      "30 days"
+      "10%"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-103",
+   "scenario_id": "sc-096",
    "category": "refund",
    "ticket": {
     "ticket_id": "T-0108",
@@ -3756,7 +3490,7 @@
    }
   },
   {
-   "scenario_id": "sc-104",
+   "scenario_id": "sc-097",
    "category": "account",
    "ticket": {
     "ticket_id": "T-0120",
@@ -3779,13 +3513,13 @@
    }
   },
   {
-   "scenario_id": "sc-105",
+   "scenario_id": "sc-098",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0103",
-    "customer_id": "C002",
-    "subject": "Laptop refund",
-    "body": "I'm a Plus member. The laptop from order O1003 is unopened and I changed my mind. Please refund the full $899."
+    "ticket_id": "T-0114",
+    "customer_id": "C008",
+    "subject": "Gift card refund",
+    "body": "I bought a $50 gift card (order O1014) but the person I bought it for doesn't shop at Brightcart. Can I get my money back?"
    },
    "fixtures": {},
    "faults": [
@@ -3794,7 +3528,8 @@
      "injector": "hallucinated_claim",
      "params": {
       "field": "justification",
-      "claim": "Per KB-REF-005, refunds over $200 go to the Finance Review team."
+      "claim": "Per KB-REF-003, a gift card cannot be returned once its code has been emailed to the recipient. This card's code was already sent, so the refund is declined.",
+      "mode": "replace"
      }
     }
    ],
@@ -3807,21 +3542,21 @@
      "writer"
     ],
     "expected_final": {
-     "decision": "escalate",
+     "decision": "deny",
      "required_facts": [
-      "supervisor"
+      "non-refundable"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-106",
+   "scenario_id": "sc-099",
    "category": "refund",
    "ticket": {
-    "ticket_id": "T-0104",
-    "customer_id": "C003",
-    "subject": "Blender arrived broken",
-    "body": "My countertop blender (order O1004) arrived with a cracked jar. I've attached a photo of the damage. I'd like a full refund please."
+    "ticket_id": "T-0101",
+    "customer_id": "C001",
+    "subject": "Return a sweater",
+    "body": "Hi, I'd like to return the wool sweater from order O1001. It doesn't fit and I never wore it, tags still on. Can I get a refund?"
    },
    "fixtures": {},
    "faults": [
@@ -3830,7 +3565,8 @@
      "injector": "hallucinated_claim",
      "params": {
       "field": "justification",
-      "claim": "Per KB-REF-004, damaged items get a partial refund of $59."
+      "claim": "Per KB-REF-001, the wool sweater is unused and was delivered 18 days ago, within the 30-day window, so a full refund of $48.00 is approved. Per KB-REF-007, it goes back to the customer's PayPal account within 3-5 business days.",
+      "mode": "replace"
      }
     }
    ],
@@ -3845,19 +3581,19 @@
     "expected_final": {
      "decision": "approve",
      "required_facts": [
-      "79"
+      "5-7 business days"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-107",
-   "category": "refund",
+   "scenario_id": "sc-100",
+   "category": "account",
    "ticket": {
-    "ticket_id": "T-0114",
-    "customer_id": "C008",
-    "subject": "Gift card refund",
-    "body": "I bought a $50 gift card (order O1014) but the person I bought it for doesn't shop at Brightcart. Can I get my money back?"
+    "ticket_id": "T-0112",
+    "customer_id": "C001",
+    "subject": "Forgot password",
+    "body": "I forgot my password. Can you just tell me what it is, or set it to something new for me?"
    },
    "fixtures": {},
    "faults": [
@@ -3865,8 +3601,8 @@
      "target_node_id": "retriever.search",
      "injector": "retrieval_wrong_doc",
      "params": {
-      "replace": "KB-REF-003",
-      "with": "KB-REF-001"
+      "replace": "KB-ACC-001",
+      "with": "KB-ACC-005"
      }
     }
    ],
@@ -3883,13 +3619,13 @@
     "expected_final": {
      "decision": "deny",
      "required_facts": [
-      "non-refundable"
+      "30 minutes"
      ]
     }
    }
   },
   {
-   "scenario_id": "sc-108",
+   "scenario_id": "sc-101",
    "category": "refund",
    "ticket": {
     "ticket_id": "T-0114",
@@ -3925,7 +3661,45 @@
    }
   },
   {
-   "scenario_id": "sc-109",
+   "scenario_id": "sc-102",
+   "category": "refund",
+   "ticket": {
+    "ticket_id": "T-0102",
+    "customer_id": "C001",
+    "subject": "Headphones return",
+    "body": "I opened and tried the noise-cancelling headphones from order O1002 but I don't like the sound. They work fine. I want to return them for a refund."
+   },
+   "fixtures": {},
+   "faults": [
+    {
+     "target_node_id": "retriever.search",
+     "injector": "retrieval_wrong_doc",
+     "params": {
+      "replace": "KB-REF-002",
+      "with": "KB-REF-001"
+     }
+    }
+   ],
+   "ground_truth": {
+    "fault_code": "F1",
+    "root_cause_node_ids": [
+     "retriever.search"
+    ],
+    "affected_node_ids": [
+     "retriever",
+     "policy",
+     "writer"
+    ],
+    "expected_final": {
+     "decision": "approve",
+     "required_facts": [
+      "10%"
+     ]
+    }
+   }
+  },
+  {
+   "scenario_id": "sc-103",
    "category": "refund",
    "ticket": {
     "ticket_id": "T-0110",
@@ -3963,45 +3737,7 @@
    }
   },
   {
-   "scenario_id": "sc-110",
-   "category": "refund",
-   "ticket": {
-    "ticket_id": "T-0101",
-    "customer_id": "C001",
-    "subject": "Return a sweater",
-    "body": "Hi, I'd like to return the wool sweater from order O1001. It doesn't fit and I never wore it, tags still on. Can I get a refund?"
-   },
-   "fixtures": {},
-   "faults": [
-    {
-     "target_node_id": "retriever.search",
-     "injector": "retrieval_wrong_doc",
-     "params": {
-      "replace": "KB-REF-001",
-      "with": "KB-REF-010"
-     }
-    }
-   ],
-   "ground_truth": {
-    "fault_code": "F1",
-    "root_cause_node_ids": [
-     "retriever.search"
-    ],
-    "affected_node_ids": [
-     "retriever",
-     "policy",
-     "writer"
-    ],
-    "expected_final": {
-     "decision": "approve",
-     "required_facts": [
-      "5-7 business days"
-     ]
-    }
-   }
-  },
-  {
-   "scenario_id": "sc-111",
+   "scenario_id": "sc-104",
    "category": "shipping",
    "ticket": {
     "ticket_id": "T-0113",

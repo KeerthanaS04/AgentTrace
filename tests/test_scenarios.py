@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from collections import Counter
 from typing import Any
@@ -10,7 +11,10 @@ import pytest
 
 from agenttrace.faults import INJECTORS, FaultPlan
 from agenttrace.scenarios.generator import (
+    DROPPED,
     EXCLUDED_BASES,
+    SPECS,
+    Spec,
     affected_steps,
     build_scenarios,
     main,
@@ -176,6 +180,20 @@ def test_affected_steps_follow_the_wiring_per_field() -> None:
         "tool_agent",
         "writer",
     ]
+
+
+def test_dropped_specs_are_documented_and_out_of_the_dataset() -> None:
+    def key(spec: Spec) -> str:
+        code, base, faults = spec
+        return json.dumps([code, base, [f.model_dump(mode="json") for f in faults]])
+
+    assert DROPPED
+    kept = {key(s) for s in SPECS}
+    for spec, reason in DROPPED:
+        assert key(spec) not in kept, spec
+        assert reason.strip()
+        FaultPlan(spec[2])  # still a valid spec, so it can be re-verified later
+    assert len({key(s) for s in SPECS}) == len(SPECS)  # no spec listed twice
 
 
 def test_generation_is_deterministic() -> None:
