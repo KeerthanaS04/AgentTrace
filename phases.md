@@ -151,7 +151,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
 - [x] **P4-T1: Fault catalog.** Pure-function injectors:
   - `F0` control (no fault) · `F1` wrong/stale retrieval · `F2` empty/irrelevant retrieval · `F3` wrong tool value · `F4` malformed/error tool response · `F5` invalid decision · `F6` hallucinated claim · `F7` multi-fault · `F8` silent fault
   - *Done when:* each injector is tested to mutate only its target node.
-- [ ] **P4-T2: Scenario schema + generator.** Ticket + fixtures + fault spec + ground truth (`root_cause_node_ids`, `affected_node_ids`, `expected_final`, `fault_type`). 80–120 scenarios, ≥10 per fault type, ≥15 controls.
+- [x] **P4-T2: Scenario schema + generator.** Ticket + fixtures + fault spec + ground truth (`root_cause_node_ids`, `affected_node_ids`, `expected_final`, `fault_type`). 80–120 scenarios, ≥10 per fault type, ≥15 controls.
   - *Done when:* dataset validates, is balanced, and is committed to `data/scenarios/`.
 - [ ] **P4-T3: Ground-truth isolation.** Only `scenarios/ground_truth.py` exposes truth; `diagnosis/` and `explainability/` can't import it.
   - *Done when:* a test fails on any forbidden import path.
