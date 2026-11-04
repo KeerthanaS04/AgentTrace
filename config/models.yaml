@@ -104,6 +104,14 @@ roles:
     model: nvidia/nemotron-3-ultra-550b-a55b
     params: {temperature: 0, max_tokens: 4096}
 
+  patcher:
+    # Proposes a corrected output for a suspect node (P5-T4 `model` patch source).
+    # Same model as judge_fast: part of diagnosis, so it spends Meta credits (one call per
+    # patch). `--role judge_nvidia` uses the free NVIDIA tier instead.
+    provider: meta
+    model: muse-spark-1.3
+    params: {temperature: 0, max_tokens: 4096, reasoning_effort: low}
+
   judge_oss:
     # Independent open-source judge, also used for high-volume continuous scoring.
     provider: openrouter

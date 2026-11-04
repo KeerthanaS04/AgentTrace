@@ -30,6 +30,7 @@ from typing import Any, Literal
 from pydantic import Field
 
 from agenttrace.schemas.base import NonEmptyStr, StrictModel
+from agenttrace.schemas.diagnosis import PatchSource, ReplaceOutputPatch
 from agenttrace.schemas.run import Run
 from agenttrace.schemas.span import Span, SpanKind
 from agenttrace.workflow.runtime import INPUT_STEP, FromInput, Workflow
@@ -47,7 +48,7 @@ class Patch(StrictModel):
     target: NonEmptyStr  # span id, or local id within the run (e.g. "policy", "router.llm#2")
     output: dict[str, Any]
     # Where the replacement came from: "oracle", "model", or "rule" (P5-T4).
-    patch_source: str | None = None
+    patch_source: PatchSource | None = None
     note: str = ""
 
 
@@ -59,7 +60,8 @@ class ReplayPlan(StrictModel):
     target_kind: SpanKind
     target_step: NonEmptyStr  # the step it belongs to ("__input__" for the input)
     output: dict[str, Any]
-    patch_source: str | None = None
+    patch_source: PatchSource | None = None
+    note: str = ""
     # Output keys whose value the patch changes (empty: the patch is a no-op).
     changed_keys: list[str] = Field(default_factory=list)
     frozen: list[str] = Field(default_factory=list)  # span ids, recorded order
@@ -90,6 +92,14 @@ class ReplayPlan(StrictModel):
 
     def local(self, span_id: str) -> str:
         return span_id.removeprefix(f"{self.run_id}/")
+
+    def schema_patch(self) -> ReplaceOutputPatch:
+        """The patch as the stored diagnosis/replay schema has it (needs a source)."""
+        if self.patch_source is None:
+            raise ValueError("a patch without a source (a manual one) has no schema form")
+        return ReplaceOutputPatch(
+            target_span_id=self.target, source=self.patch_source, output=self.output
+        )
 
 
 # ---------------------------------------------------------------- helpers
@@ -136,7 +146,7 @@ def _expected_keys(workflow: Workflow, step: Span) -> set[str] | None:
 
 
 def patch_fields(
-    run: Run, target: str, fields: Mapping[str, Any], *, patch_source: str | None = None
+    run: Run, target: str, fields: Mapping[str, Any], *, patch_source: PatchSource | None = None
 ) -> Patch:
     """A patch that keeps the target's recorded output and changes only `fields`."""
     span = resolve_target(run, target)
@@ -219,6 +229,7 @@ def plan_patch(run: Run, workflow: Workflow, patch: Patch) -> ReplayPlan:
         target_step=top.node_id,
         output=dict(patch.output),
         patch_source=patch.patch_source,
+        note=patch.note,
         changed_keys=changed,
         frozen=frozen,
         rerun=rerun,

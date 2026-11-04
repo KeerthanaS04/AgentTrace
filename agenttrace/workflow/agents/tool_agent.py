@@ -77,7 +77,7 @@ class ToolAgent:
                 if len(calls) >= MAX_CALLS:
                     break
                 if not _already_called(calls, req):  # also catches repeats within one batch
-                    calls.append(_execute(toolbox, req))
+                    calls.append(execute_call(toolbox, req))
                     made += 1
             if last.done or not made or len(calls) >= MAX_CALLS:
                 break
@@ -92,7 +92,8 @@ def _already_called(calls: list[dict[str, Any]], req: ToolRequest) -> bool:
     return any(c["tool"] == req.tool and c["args"] == req.args for c in calls)
 
 
-def _execute(toolbox: ToolBox, req: ToolRequest) -> dict[str, Any]:
+def execute_call(toolbox: ToolBox, req: ToolRequest) -> dict[str, Any]:
+    """One tool call as a `tool_calls` entry; input errors become results, not raises."""
     if req.tool == "refund_api" and req.args.get("mode") == "issue":
         return {
             "tool": req.tool,
