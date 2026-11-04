@@ -51,6 +51,37 @@
       "title": "Position",
       "type": "object"
     },
+    "ReplayLegendItem": {
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "title": "Color",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "patched",
+            "changed",
+            "new",
+            "missing",
+            "unchanged"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "color",
+        "label"
+      ],
+      "title": "ReplayLegendItem",
+      "type": "object"
+    },
     "UiEdge": {
       "additionalProperties": false,
       "properties": {
@@ -137,6 +168,28 @@
         "kind"
       ],
       "title": "UiEdgeData",
+      "type": "object"
+    },
+    "UiFinalChange": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "default": null,
+          "title": "After"
+        },
+        "before": {
+          "default": null,
+          "title": "Before"
+        },
+        "key": {
+          "title": "Key",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "title": "UiFinalChange",
       "type": "object"
     },
     "UiNode": {
@@ -298,6 +351,32 @@
           "default": null,
           "title": "Parent"
         },
+        "replay_changes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Replay Changes",
+          "type": "array"
+        },
+        "replay_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "patched",
+                "changed",
+                "new",
+                "missing",
+                "unchanged"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Replay Status"
+        },
         "row": {
           "description": "Position within the column, top to bottom.",
           "title": "Row",
@@ -339,6 +418,118 @@
         "row"
       ],
       "title": "UiNodeData",
+      "type": "object"
+    },
+    "UiReplay": {
+      "additionalProperties": false,
+      "description": "What a replay changed against its original run (P5-T5).",
+      "properties": {
+        "before_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Before Score"
+        },
+        "clean_correct": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Clean Correct"
+        },
+        "counts": {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "title": "Counts",
+          "type": "object"
+        },
+        "final_changes": {
+          "items": {
+            "$ref": "#/$defs/UiFinalChange"
+          },
+          "title": "Final Changes",
+          "type": "array"
+        },
+        "legend": {
+          "items": {
+            "$ref": "#/$defs/ReplayLegendItem"
+          },
+          "title": "Legend",
+          "type": "array"
+        },
+        "missing": {
+          "description": "Local ids only the original has (not drawn).",
+          "items": {
+            "type": "string"
+          },
+          "title": "Missing",
+          "type": "array"
+        },
+        "original_run_id": {
+          "title": "Original Run Id",
+          "type": "string"
+        },
+        "patch_source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Patch Source"
+        },
+        "patched": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Patched",
+          "type": "array"
+        },
+        "recovered": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Recovered"
+        },
+        "recovery_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Recovery Score"
+        }
+      },
+      "required": [
+        "original_run_id",
+        "legend"
+      ],
+      "title": "UiReplay",
       "type": "object"
     }
   },
@@ -385,6 +576,17 @@
       },
       "title": "Nodes",
       "type": "array"
+    },
+    "replay": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/UiReplay"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "run_id": {
       "title": "Run Id",

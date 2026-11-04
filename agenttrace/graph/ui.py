@@ -12,6 +12,11 @@ the UI never hard-codes it.
 Layout hints: top-level steps sit in columns by causal depth (input first), stacked by
 recorded order; calls nested in a step sit in the same column just below it.
 
+A replay's graph can carry a diff overlay (P5-T5, `with_replay_overlay`): each node's
+`replay_status` (patched / changed / new / unchanged) and what changed, plus a `replay`
+block with the final-output changes, spans only the original had, and (when graded)
+recovery, with its own legend.
+
 The JSON Schema the UI consumes is generated from these models and committed at
 `ui/schema/run-graph.schema.json`:
 
@@ -48,6 +53,16 @@ STATUS_STYLE: dict[DisplayStatus, tuple[str, str]] = {
     "ok": ("#2ca02c", "OK"),
 }
 
+ReplayStatus = Literal["patched", "changed", "new", "missing", "unchanged"]
+
+REPLAY_STYLE: dict[ReplayStatus, tuple[str, str]] = {
+    "patched": ("#1f77b4", "Patched (output replaced)"),
+    "changed": ("#e377c2", "Re-ran, output changed"),
+    "new": ("#17becf", "New in the replay"),
+    "missing": ("#c7c7c7", "Only in the original"),
+    "unchanged": ("#d9d9d9", "Unchanged"),
+}
+
 COLUMN_GAP = 300
 STEP_WIDTH, STEP_HEIGHT = 240, 64
 CALL_WIDTH, CALL_HEIGHT = 220, 40
@@ -80,6 +95,9 @@ class UiNodeData(StrictModel):
     error: str | None = None
     verdict: str | None = None
     contract: str | None = None  # the step's contract description, if any
+    # Set only on a replay's graph (P5-T5).
+    replay_status: ReplayStatus | None = None
+    replay_changes: list[str] = Field(default_factory=list)
     layer: int = Field(description="Column: causal depth of the step (0 = workflow input).")
     row: int = Field(description="Position within the column, top to bottom.")
 
@@ -117,6 +135,37 @@ class LegendItem(StrictModel):
     label: str
 
 
+class ReplayLegendItem(StrictModel):
+    status: ReplayStatus
+    color: str
+    label: str
+
+
+class UiFinalChange(StrictModel):
+    key: str
+    before: Any = None
+    after: Any = None
+
+
+class UiReplay(StrictModel):
+    """What a replay changed against its original run (P5-T5)."""
+
+    original_run_id: str
+    patch_source: str | None = None
+    patched: list[str] = Field(default_factory=list)  # local ids
+    missing: list[str] = Field(
+        default_factory=list, description="Local ids only the original has (not drawn)."
+    )
+    final_changes: list[UiFinalChange] = Field(default_factory=list)
+    counts: dict[str, int] = Field(default_factory=dict)
+    # Set when the replay was graded against a scenario's expected outcome.
+    recovered: bool | None = None
+    recovery_score: float | None = None
+    before_score: float | None = None
+    clean_correct: bool | None = None
+    legend: list[ReplayLegendItem]
+
+
 class UiGraph(StrictModel):
     schema_version: Literal[1] = UI_SCHEMA_VERSION
     run_id: str
@@ -127,6 +176,7 @@ class UiGraph(StrictModel):
     nodes: list[UiNode]
     edges: list[UiEdge]
     legend: list[LegendItem]
+    replay: UiReplay | None = None
 
 
 # ---------------------------------------------------------------- building it
@@ -255,6 +305,24 @@ def to_ui_graph(g: nx.DiGraph, run: Run | None = None) -> UiGraph:
         edges=edges,
         legend=[LegendItem(status=s, color=c, label=lbl) for s, (c, lbl) in STATUS_STYLE.items()],
     )
+
+
+def replay_legend() -> list[ReplayLegendItem]:
+    return [ReplayLegendItem(status=s, color=c, label=lbl) for s, (c, lbl) in REPLAY_STYLE.items()]
+
+
+def with_replay_overlay(
+    doc: UiGraph,
+    statuses: dict[str, tuple[ReplayStatus, list[str]]],
+    replay: UiReplay,
+) -> UiGraph:
+    """A replay's graph with each node's diff status (keyed by local id) and the summary."""
+    nodes = []
+    for node in doc.nodes:
+        status, changes = statuses.get(node.data.local_id, ("unchanged", []))
+        data = node.data.model_copy(update={"replay_status": status, "replay_changes": changes})
+        nodes.append(node.model_copy(update={"data": data}))
+    return doc.model_copy(update={"nodes": nodes, "replay": replay})
 
 
 # ---------------------------------------------------------------- the schema file

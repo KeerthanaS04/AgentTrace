@@ -173,7 +173,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
   - *Done when:* patching a known-bad node changes only its descendants.
 - [x] **P5-T4: Patch sources.** `oracle` (ground truth, upper bound), `model` (model-proposed), `rule` (deterministic fix). Tag `patch_source`.
   - *Done when:* each source works end to end on ≥1 fault type.
-- [ ] **P5-T5: Differ + recovery scoring.** Changed spans, final diff, `recovered`, `recovery_score`.
+- [x] **P5-T5: Differ + recovery scoring.** Changed spans, final diff, `recovered`, `recovery_score`.
   - *Done when:* output feeds both UI and evaluation harness.
 - [ ] **P5-T6: Replay stability.** Same replay ×3: identical (cached) or within documented tolerance (live).
   - *Done when:* stability report generated; tolerance documented.
