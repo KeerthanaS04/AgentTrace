@@ -16,6 +16,7 @@ from agenttrace.schemas.diagnosis import (
     PropagatedError,
     ReplaceOutputPatch,
     RootCause,
+    ValidatorFinding,
     Verdict,
 )
 from agenttrace.schemas.replay import ReplayResult
@@ -49,5 +50,6 @@ __all__ = [
     "SpanKind",
     "Ticket",
     "TicketCategory",
+    "ValidatorFinding",
     "Verdict",
 ]

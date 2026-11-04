@@ -158,6 +158,30 @@ class BM25Index:
     def __len__(self) -> int:
         return len(self._docs)
 
+    def _bm25(self, q_terms: Counter[str], i: int) -> float:
+        tf, length = self._tf[i], self._len[i]
+        score = 0.0
+        norm = self.k1 * (1 - self.b + self.b * length / self._avg_len)
+        for term, q_count in q_terms.items():
+            f = tf.get(term)
+            if f:
+                score += q_count * self._idf[term] * f * (self.k1 + 1) / (f + norm)
+        # Round so tiny float noise can't reorder ties across platforms.
+        return round(score, 9)
+
+    def has(self, doc_id: str) -> bool:
+        """Whether the doc is indexed (superseded docs are not, by default)."""
+        return any(d.doc_id == doc_id for d in self._docs)
+
+    def score(self, query: str, doc_id: str) -> float | None:
+        """The BM25 score `search` gives `doc_id` for `query` (None if not indexed), so a
+        recorded hit can be checked against the index (P6-T2)."""
+        q_terms = Counter(expand_query(tokenize(query)))
+        for i, doc in enumerate(self._docs):
+            if doc.doc_id == doc_id:
+                return self._bm25(q_terms, i)
+        return None
+
     @traced(
         "retrieval",
         "search",
@@ -173,16 +197,10 @@ class BM25Index:
             raise ValueError("k must be >= 1")
         q_terms = Counter(expand_query(tokenize(query)))
         scored: list[tuple[float, str, str]] = []
-        for doc, tf, length in zip(self._docs, self._tf, self._len, strict=True):
-            score = 0.0
-            norm = self.k1 * (1 - self.b + self.b * length / self._avg_len)
-            for term, q_count in q_terms.items():
-                f = tf.get(term)
-                if f:
-                    score += q_count * self._idf[term] * f * (self.k1 + 1) / (f + norm)
+        for i, doc in enumerate(self._docs):
+            score = self._bm25(q_terms, i)
             if score > 0:
-                # Round so tiny float noise can't reorder ties across platforms.
-                scored.append((round(score, 9), doc.doc_id, doc.title))
+                scored.append((score, doc.doc_id, doc.title))
         scored.sort(key=lambda s: (-s[0], s[1]))
         return [SearchHit(doc_id=d, score=s, title=t) for s, d, t in scored[:k]]
 
