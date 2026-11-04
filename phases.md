@@ -205,7 +205,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
 ## Phase 7: Counterfactual Verification Loop
 **Goal:** prove or reject diagnoses by experiment. · **Milestone:** **M1 complete here**
 
-- [ ] **P7-T1: Verification loop.** Per candidate: patch → replay → check recovery; verified, or demote and try next (max 3).
+- [x] **P7-T1: Verification loop.** Per candidate: patch → replay → check recovery; verified, or demote and try next (max 3).
   - *Done when:* loop terminates; `ReplayResult` rows linked to the diagnosis.
 - [ ] **P7-T2: Interventional ranking.** Rank by measured recovery; label "necessary" vs. "contributing".
   - *Done when:* `F7` scenarios get correct combined attribution when both roots are patched.
