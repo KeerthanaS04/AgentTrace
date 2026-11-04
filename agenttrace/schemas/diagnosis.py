@@ -49,6 +49,22 @@ class AnomalyScore(StrictModel):
         return self
 
 
+class ValidatorFinding(StrictModel):
+    """A deterministic check that failed on one span (P6-T2): hard evidence, no model call.
+
+    `error`: the span's output is malformed or contradicts itself or the record (a judge
+    is not needed to call it wrong). `warning`: worth a judge's look (e.g. an empty
+    search, a number the inputs do not contain).
+    """
+
+    span_id: NonEmptyStr
+    check: NonEmptyStr
+    severity: Literal["error", "warning"]
+    message: NonEmptyStr
+    # Span ids / doc ids the finding rests on (like a judge's evidence refs).
+    evidence: list[str] = Field(default_factory=list)
+
+
 class RootCause(StrictModel):
     node_id: NonEmptyStr
     span_id: NonEmptyStr
