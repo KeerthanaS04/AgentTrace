@@ -68,7 +68,10 @@ providers:
     supports_json_mode: false
     timeout_s: 120
     max_retries: 4
-    models: {}   # add pricing per model once chosen (see the model's OpenRouter page)
+    models:
+      # Verified 2026-11-04 on openrouter.ai/qwen/qwen-2.5-72b-instruct (DeepInfra route);
+      # response_format is supported there, but json mode stays off provider-wide.
+      qwen/qwen-2.5-72b-instruct: {input_per_m: 0.36, output_per_m: 0.40}
 
   local:
     # Local vLLM or any OpenAI-compatible server. LOCAL_OPENAI_BASE_URL overrides base_url.
@@ -99,10 +102,12 @@ roles:
 
   judge_nvidia:
     # Independent open-weight judge: the largest Nemotron that answers on this key.
-    # Thinking stays on (judging benefits from it); occasional 503s are retried.
+    # Thinking off since P6-T4: with it on, P6-T1 measured ~56 s per span and one call that
+    # spent all 4096 tokens reasoning with no answer; the dev set would take ~3 hours.
+    # Re-checked with `python tasks.py judge-sample --roles judge_nvidia`.
     provider: nvidia
     model: nvidia/nemotron-3-ultra-550b-a55b
-    params: {temperature: 0, max_tokens: 4096}
+    params: {temperature: 0, max_tokens: 4096, chat_template_kwargs: {enable_thinking: false}}
 
   patcher:
     # Proposes a corrected output for a suspect node (P5-T4 `model` patch source).
@@ -114,8 +119,9 @@ roles:
 
   judge_oss:
     # Independent open-source judge, also used for high-volume continuous scoring.
+    # Qwen: a third model family besides Muse (Meta) and Nemotron (NVIDIA). Chosen P6-T4.
     provider: openrouter
-    model: TODO_VERIFY        # e.g. a Llama / Qwen / Mistral instruct model
+    model: qwen/qwen-2.5-72b-instruct
     params: {temperature: 0, max_tokens: 1024}
 
   # --- Agents under test ---------------------------------------------------

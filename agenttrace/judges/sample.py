@@ -122,9 +122,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             except GatewayError as exc:  # unknown or unverified role
                 skipped[role] = str(exc)
             continue
-        rows = []
+        rows: list[JudgeResult] = []
         for run_id, local in sample:
             res = judge_span(gateway, runs[run_id], local, role=role)
+            if res.auth_error:
+                # The provider rejected the credentials: no other span will do better.
+                skipped[role] = f"provider rejected the key ({res.provider_error})"
+                rows = []
+                break
             rows.append(res)
             if args.verbose or not res.valid:
                 verdict = res.score.verdict if res.score else "INVALID"
@@ -134,7 +139,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                     f"tries {res.attempts}{last}",
                     flush=True,
                 )
-        results[role] = rows
+        if rows:
+            results[role] = rows
     gateway.close()
 
     summary = {}

@@ -189,7 +189,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
   - *Done when:* catch all `F4` and most `F2` with no LLM call.
 - [x] **P6-T3: Stage A — per-node anomaly scoring.** Fast judges over every node in topological order, combined with validators.
   - *Done when:* every span gets an `AnomalyScore`; cost per run logged.
-- [ ] **P6-T4: Judge ensemble.** `judge_fast` + `judge_nvidia` + `judge_oss`; weighted vote; Cohen's κ; per-node disagreement.
+- [x] **P6-T4: Judge ensemble.** `judge_fast` + `judge_nvidia` + `judge_oss`; weighted vote; Cohen's κ; per-node disagreement.
   - *Done when:* output has per-judge verdicts, aggregate verdict, agreement score.
 - [ ] **P6-T5: Stage B — causal attribution.** Root cause = bad output + trustworthy inputs (or unexplained anomalous parents). Propagated = bad output + anomalous parent that explains it (with path). Rank by topo order, confidence, descendant count.
   - *Done when:* correct on 10 hand-checked scenarios; every propagated node has a valid path.
