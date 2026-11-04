@@ -12,6 +12,8 @@
     agenttrace graph RUN --from tool_agent.order_lookup   # its paths to the final output
     agenttrace graph RUN_A --diff RUN_B           # where two runs first diverge
     agenttrace diff RUN_A RUN_B                   # each span: same / changed (how) / only in one
+    agenttrace plan RUN policy --set decision='"deny"'   # replay plan for a patch: frozen /
+                                                  # patched / re-run spans (P5-T2)
 
 The store is SQLite at .cache/agenttrace.db (override with --db or $AGENTTRACE_DB).
 """
@@ -78,6 +80,20 @@ def build_parser() -> argparse.ArgumentParser:
     diff.add_argument("run_a")
     diff.add_argument("run_b")
     diff.add_argument("--all", action="store_true", help="also list unchanged spans")
+
+    plan = with_db(sub.add_parser("plan", help="replay plan for patching one span"))
+    plan.add_argument("run_id")
+    plan.add_argument("target", help="span to patch (local id, e.g. policy, router.llm#2)")
+    plan.add_argument(
+        "--set",
+        dest="fields",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="change one output field (VALUE is JSON, else a string); repeatable",
+    )
+    plan.add_argument("--output", type=Path, help="JSON file: the full replacement output")
+    plan.add_argument("--profile", default="default", help="model profile for the workflow")
 
     for name in NOT_YET:
         sub.add_parser(name)
@@ -300,6 +316,55 @@ def cmd_diff(args: argparse.Namespace) -> int:
     return 0
 
 
+def _field(text: str) -> tuple[str, object]:
+    import json
+
+    key, sep, raw = text.partition("=")
+    if not sep or not key:
+        raise ValueError(f"--set needs KEY=VALUE, got {text!r}")
+    try:
+        return key, json.loads(raw)
+    except json.JSONDecodeError:
+        return key, raw
+
+
+def cmd_plan(args: argparse.Namespace) -> int:
+    import json
+
+    from agenttrace.replay.patcher import Patch, PatchError, patch_fields, plan_patch
+    from agenttrace.store import TraceStore
+    from agenttrace.workflow.agent_config import load_agents_config
+    from agenttrace.workflow.support import build_support_workflow
+
+    with TraceStore.open(args.db) as store:
+        if not store.has_run(args.run_id):
+            print(f"no stored run {args.run_id!r} (see `agenttrace runs`)")
+            return 2
+        run = store.get_run(args.run_id)
+    workflow = build_support_workflow(load_agents_config().profile(args.profile).roles())
+    try:
+        if args.output:
+            output = json.loads(args.output.read_text(encoding="utf-8"))
+            patch = Patch(target=args.target, output=output)
+        else:
+            patch = patch_fields(run, args.target, dict(_field(f) for f in args.fields))
+        plan = plan_patch(run, workflow, patch)
+    except (PatchError, ValueError, OSError) as exc:
+        print(f"cannot plan: {exc}")
+        return 2
+
+    where = f"{plan.target_kind}, step {plan.target_step}"
+    print(f"run {run.run_id}: patch {plan.target_local} ({where})")
+    print(f"changed keys : {', '.join(plan.changed_keys) or 'none (the patch is a no-op)'}")
+    print(f"frozen steps : {', '.join(plan.frozen_steps) or '-'}")
+    print(f"re-run steps : {', '.join(plan.rerun_steps) or '-'}\n")
+    labels = {"frozen": "frozen", "patched": "PATCHED", "rerun": "re-run"}
+    for span in run.spans:
+        print(f"  {labels[plan.action(span.span_id)]:<8} {plan.local(span.span_id)}")
+    print(f"\n{len(plan.frozen)} frozen, 1 patched, {len(plan.rerun)} to re-run")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command in NOT_YET:
@@ -313,6 +378,7 @@ def main(argv: list[str] | None = None) -> int:
         "import": cmd_import,
         "graph": cmd_graph,
         "diff": cmd_diff,
+        "plan": cmd_plan,
     }[args.command]
     return handler(args)
 
