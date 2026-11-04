@@ -112,6 +112,10 @@ def ensemble(*args: str) -> int:
     return _run("uv", "run", "python", "-m", "agenttrace.diagnosis.ensemble", *args)
 
 
+def attribution_check(*args: str) -> int:
+    return _run("uv", "run", "python", "-m", "agenttrace.scenarios.attribution_check", *args)
+
+
 # Tasks that forward extra command-line arguments (e.g. `clean --profile bolt`).
 WITH_ARGS: dict[str, Callable[..., int]] = {
     "clean": clean,
@@ -125,6 +129,7 @@ WITH_ARGS: dict[str, Callable[..., int]] = {
     "devset": devset,
     "stage-a": stage_a,
     "ensemble": ensemble,
+    "attribution-check": attribution_check,
 }
 
 TASKS: dict[str, Callable[..., int]] = {
