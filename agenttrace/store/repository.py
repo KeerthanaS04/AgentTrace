@@ -19,16 +19,17 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import Engine, create_engine, event, func, select
+from sqlalchemy import Engine, create_engine, delete, event, func, select
 from sqlalchemy.orm import Session
 
-from agenttrace.schemas.diagnosis import Diagnosis
+from agenttrace.schemas.diagnosis import AnomalyScore, Diagnosis
 from agenttrace.schemas.replay import ReplayResult
 from agenttrace.schemas.run import Run
 from agenttrace.schemas.score import ExplainabilityScore, Metric
 from agenttrace.schemas.span import Span, SpanKind
 from agenttrace.store.models import (
     SCHEMA_VERSION,
+    AnomalyRow,
     Base,
     DiagnosisRow,
     MetaRow,
@@ -299,6 +300,39 @@ class TraceStore:
         return [ExplainabilityScore.model_validate_json(d) for d in docs]
 
     # ------------------------------------------------------------ diagnoses
+
+    def add_anomaly(self, score: AnomalyScore) -> None:
+        """Store a score, replacing an earlier one for the same span, judge, and prompt."""
+        run_id = score.span_id.split("/", 1)[0]
+        with self._session() as s:
+            s.execute(
+                delete(AnomalyRow).where(
+                    AnomalyRow.span_id == score.span_id,
+                    AnomalyRow.judge == score.judge,
+                    AnomalyRow.prompt_version == score.prompt_version,
+                )
+            )
+            s.add(
+                AnomalyRow(
+                    run_id=run_id,
+                    span_id=score.span_id,
+                    judge=score.judge,
+                    prompt_version=score.prompt_version,
+                    doc=score.model_dump_json(),
+                )
+            )
+
+    def anomalies(
+        self, *, run_id: str | None = None, judge: str | None = None
+    ) -> list[AnomalyScore]:
+        query = select(AnomalyRow.doc).order_by(AnomalyRow.id)
+        if run_id is not None:
+            query = query.where(AnomalyRow.run_id == run_id)
+        if judge is not None:
+            query = query.where(AnomalyRow.judge == judge)
+        with self._session() as s:
+            docs = s.scalars(query).all()
+        return [AnomalyScore.model_validate_json(d) for d in docs]
 
     def save_diagnosis(self, diagnosis: Diagnosis, *, replace: bool = False) -> None:
         with self._session() as s:

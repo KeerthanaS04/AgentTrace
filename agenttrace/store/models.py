@@ -68,6 +68,22 @@ class ScoreRow(Base):
     doc: Mapped[str] = mapped_column(Text)
 
 
+class AnomalyRow(Base):
+    """One judge's (or the validators') AnomalyScore for one span (P6-T3).
+
+    Added without a schema-version bump: `create_all` adds the table to older stores.
+    """
+
+    __tablename__ = "anomaly_scores"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    run_id: Mapped[str] = mapped_column(String, index=True)
+    span_id: Mapped[str] = mapped_column(String, index=True)
+    judge: Mapped[str] = mapped_column(String, index=True)
+    prompt_version: Mapped[str] = mapped_column(String)
+    doc: Mapped[str] = mapped_column(Text)
+
+
 class DiagnosisRow(Base):
     __tablename__ = "diagnoses"
 

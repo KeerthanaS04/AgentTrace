@@ -100,6 +100,14 @@ def validator_check(*args: str) -> int:
     return _run("uv", "run", "python", "-m", "agenttrace.scenarios.validator_check", *args)
 
 
+def devset(*args: str) -> int:
+    return _run("uv", "run", "python", "-m", "agenttrace.scenarios.devset", *args)
+
+
+def stage_a(*args: str) -> int:
+    return _run("uv", "run", "python", "-m", "agenttrace.diagnosis.stage_a", *args)
+
+
 # Tasks that forward extra command-line arguments (e.g. `clean --profile bolt`).
 WITH_ARGS: dict[str, Callable[..., int]] = {
     "clean": clean,
@@ -110,6 +118,8 @@ WITH_ARGS: dict[str, Callable[..., int]] = {
     "replay-stability": replay_stability,
     "judge-sample": judge_sample,
     "validator-check": validator_check,
+    "devset": devset,
+    "stage-a": stage_a,
 }
 
 TASKS: dict[str, Callable[..., int]] = {
