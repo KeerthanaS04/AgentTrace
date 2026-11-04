@@ -120,6 +120,10 @@ def escalate(*args: str) -> int:
     return _run("uv", "run", "python", "-m", "agenttrace.scenarios.escalation_check", *args)
 
 
+def verify_diagnoses(*args: str) -> int:
+    return _run("uv", "run", "python", "-m", "agenttrace.scenarios.verification_check", *args)
+
+
 # Tasks that forward extra command-line arguments (e.g. `clean --profile bolt`).
 WITH_ARGS: dict[str, Callable[..., int]] = {
     "clean": clean,
@@ -135,6 +139,7 @@ WITH_ARGS: dict[str, Callable[..., int]] = {
     "ensemble": ensemble,
     "attribution-check": attribution_check,
     "escalate": escalate,
+    "verify-diagnoses": verify_diagnoses,
 }
 
 TASKS: dict[str, Callable[..., int]] = {
