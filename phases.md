@@ -175,7 +175,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
   - *Done when:* each source works end to end on ≥1 fault type.
 - [x] **P5-T5: Differ + recovery scoring.** Changed spans, final diff, `recovered`, `recovery_score`.
   - *Done when:* output feeds both UI and evaluation harness.
-- [ ] **P5-T6: Replay stability.** Same replay ×3: identical (cached) or within documented tolerance (live).
+- [x] **P5-T6: Replay stability.** Same replay ×3: identical (cached) or within documented tolerance (live).
   - *Done when:* stability report generated; tolerance documented.
 
 ---

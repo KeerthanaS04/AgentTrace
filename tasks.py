@@ -88,6 +88,10 @@ def patch_check(*args: str) -> int:
     return _run("uv", "run", "python", "-m", "agenttrace.scenarios.patch_check", *args)
 
 
+def replay_stability(*args: str) -> int:
+    return _run("uv", "run", "python", "-m", "agenttrace.scenarios.stability", *args)
+
+
 # Tasks that forward extra command-line arguments (e.g. `clean --profile bolt`).
 WITH_ARGS: dict[str, Callable[..., int]] = {
     "clean": clean,
@@ -95,6 +99,7 @@ WITH_ARGS: dict[str, Callable[..., int]] = {
     "multirun": multirun,
     "replay-check": replay_check,
     "patch-check": patch_check,
+    "replay-stability": replay_stability,
 }
 
 TASKS: dict[str, Callable[..., int]] = {
