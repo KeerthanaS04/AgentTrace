@@ -183,7 +183,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
 ## Phase 6: Diagnosis Engine
 **Goal:** failed run → ranked, evidence-backed root cause. · **Milestone:** M1 (minimal), deepened later
 
-- [ ] **P6-T1: Judge prompts + schemas.** Versioned prompts in `judges/prompts/` → `AnomalyScore`. Judge answers separately: (a) inputs trustworthy? (b) output correct given inputs? Must cite span/doc IDs.
+- [x] **P6-T1: Judge prompts + schemas.** Versioned prompts in `judges/prompts/` → `AnomalyScore`. Judge answers separately: (a) inputs trustworthy? (b) output correct given inputs? Must cite span/doc IDs.
   - *Done when:* schema-valid output on 20 sample spans per judge model.
 - [ ] **P6-T2: Deterministic validators.** Schema, ranges, tool-error flags, retrieval relevance threshold, numeric claim-vs-source match.
   - *Done when:* catch all `F4` and most `F2` with no LLM call.
