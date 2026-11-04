@@ -7,6 +7,7 @@ from typing import Any
 from pydantic import Field, model_validator
 
 from agenttrace.schemas.base import NonEmptyStr, StrictModel, UtcDatetime, utc_now
+from agenttrace.schemas.diagnosis import PatchSource
 from agenttrace.schemas.span import Span
 
 
@@ -18,8 +19,10 @@ class Run(StrictModel):
     final_output: dict[str, Any] = Field(default_factory=dict)
     final_correct: bool | None = None
     spans: list[Span] = Field(default_factory=list)
-    # Set on counterfactual replays: the run this one was replayed from.
+    # Set on counterfactual replays: the run this one was replayed from, and where the
+    # patched output came from ("oracle", "model", or "rule"; P5-T4).
     replay_of: str | None = None
+    patch_source: PatchSource | None = None
     seed: int | None = None
     # Overrides applied to every model call of the run (e.g. {"seed": 2}); a replay must
     # use the same ones, or no recorded call matches.

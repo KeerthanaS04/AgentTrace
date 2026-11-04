@@ -111,7 +111,7 @@ class PatchingReplay:
 
 
 @dataclass
-class ReplayResult:
+class ExecutedReplay:
     plan: ReplayPlan
     original: Run
     replay: Run
@@ -157,7 +157,7 @@ def execute_plan(
     run_id: str | None = None,
     cache: ReplayCache | None = None,
     faults: FaultHook | None = None,
-) -> ReplayResult:
+) -> ExecutedReplay:
     """Replay `run` with `plan`'s patch. Returns the replayed Run (`replay_of` set)."""
     if plan.run_id != run.run_id:
         raise ValueError(f"the plan is for run {plan.run_id}, not {run.run_id}")
@@ -173,11 +173,15 @@ def execute_plan(
         model_params=run_model_params(run) or None,
         replay=hook,
     )
-    replay = result.to_run(scenario_id=run.scenario_id).model_copy(update={"replay_of": run.run_id})
+    replay = result.to_run(scenario_id=run.scenario_id).model_copy(
+        update={"replay_of": run.run_id, "patch_source": plan.patch_source}
+    )
     if is_input:
         spans = [
             s.model_copy(update={"patched": True}) if _local(s.span_id) == plan.target_local else s
             for s in replay.spans
         ]
         replay = replay.model_copy(update={"spans": spans})
-    return ReplayResult(plan=plan, original=run, replay=replay, result=result, stats=cache.stats())
+    return ExecutedReplay(
+        plan=plan, original=run, replay=replay, result=result, stats=cache.stats()
+    )

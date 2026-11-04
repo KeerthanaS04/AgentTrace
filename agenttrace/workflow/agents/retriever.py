@@ -52,27 +52,44 @@ class RetrieverAgent:
             PROMPT.format(category=inputs["category"], ticket=as_json(ticket)),
             RetrieverReply,
         )
-        index = ctx.resource("kb_index", BM25Index)
-        kb = ctx.resource("kb", KnowledgeBase)
-        k = int(ctx.params.get("hits_per_query", HITS_PER_QUERY))
-        doc_ids: list[str] = []
-        for query in [*reply.queries, f"{ticket['subject']} {ticket['body']}"]:
-            for hit in index.search(query, k):
-                if hit.doc_id not in doc_ids:
-                    doc_ids.append(hit.doc_id)
-        doc_ids = doc_ids[: int(ctx.params.get("max_docs", MAX_DOCS))]
-        # Standing escalation docs are added after the cap, so they are never crowded out.
-        doc_ids += [h.doc_id for h in index.search(STANDING_QUERY, k) if h.doc_id not in doc_ids]
-        docs = [
-            {
-                "doc_id": d.doc_id,
-                "title": d.title,
-                "effective_date": d.effective_date.isoformat(),
-                "body": d.body.strip(),
-            }
-            for d in (kb.get(i) for i in doc_ids)
-        ]
+        doc_ids, docs = select_docs(
+            ctx.resource("kb_index", BM25Index),
+            ctx.resource("kb", KnowledgeBase),
+            reply.queries,
+            ticket,
+            ctx.params,
+        )
         return AgentOutput(
             output={"queries": reply.queries, "docs": docs},
             explanation=reply.explanation(cited=doc_ids),
         )
+
+
+def select_docs(
+    index: BM25Index,
+    kb: KnowledgeBase,
+    queries: list[str],
+    ticket: Mapping[str, Any],
+    params: Mapping[str, Any],
+) -> tuple[list[str], list[dict[str, Any]]]:
+    """Search the model's queries and the ticket text, cap, then add the standing
+    escalation docs. Deterministic given the queries (used again by replay rules, P5-T4)."""
+    k = int(params.get("hits_per_query", HITS_PER_QUERY))
+    doc_ids: list[str] = []
+    for query in [*queries, f"{ticket['subject']} {ticket['body']}"]:
+        for hit in index.search(query, k):
+            if hit.doc_id not in doc_ids:
+                doc_ids.append(hit.doc_id)
+    doc_ids = doc_ids[: int(params.get("max_docs", MAX_DOCS))]
+    # Standing escalation docs are added after the cap, so they are never crowded out.
+    doc_ids += [h.doc_id for h in index.search(STANDING_QUERY, k) if h.doc_id not in doc_ids]
+    docs = [
+        {
+            "doc_id": d.doc_id,
+            "title": d.title,
+            "effective_date": d.effective_date.isoformat(),
+            "body": d.body.strip(),
+        }
+        for d in (kb.get(i) for i in doc_ids)
+    ]
+    return doc_ids, docs
