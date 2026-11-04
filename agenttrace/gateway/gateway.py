@@ -68,6 +68,31 @@ def _record_llm(span: SpanBuilder, result: CompletionResult) -> None:
     }
 
 
+def _llm_replay_key(a: dict[str, Any]) -> tuple[str | None, dict[str, Any]]:
+    """The model and merged params this call will use: what the recorded span holds."""
+    rc = a["self"].resolve(a["role"])
+    return rc.model, {**rc.params, **(a["params"] or {})}
+
+
+def _llm_rebuild(span: SpanBuilder, a: dict[str, Any]) -> CompletionResult:
+    """A completion served from a replayed span (no provider call, nothing spent)."""
+    out = span.output
+    return CompletionResult(
+        text=out["text"],
+        role=a["role"],
+        provider=out["provider"],
+        model=span.model or "",
+        params=span.params,
+        tokens_in=span.tokens_in,
+        tokens_out=span.tokens_out,
+        reasoning_tokens=out.get("reasoning_tokens") or 0,
+        finish_reason=out.get("finish_reason"),
+        cost_usd=0.0,
+        original_cost_usd=out.get("original_cost_usd") or 0.0,
+        cache_hit=True,
+    )
+
+
 # Rough chars-per-token used only for the pre-call budget estimate (errs high).
 _CHARS_PER_TOKEN = 3
 _DEFAULT_MAX_TOKENS = 1024
@@ -178,7 +203,14 @@ class Gateway:
     # ------------------------------------------------------------ calls
 
     # Every model call, including each structured-output repair, is one "llm" span.
-    @traced("llm", "llm", capture=_llm_input, record=_record_llm)
+    @traced(
+        "llm",
+        "llm",
+        capture=_llm_input,
+        record=_record_llm,
+        replay_key=_llm_replay_key,
+        rebuild=_llm_rebuild,
+    )
     def complete(
         self,
         role: str,

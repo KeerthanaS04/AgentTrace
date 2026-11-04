@@ -21,6 +21,9 @@ class Run(StrictModel):
     # Set on counterfactual replays: the run this one was replayed from.
     replay_of: str | None = None
     seed: int | None = None
+    # Overrides applied to every model call of the run (e.g. {"seed": 2}); a replay must
+    # use the same ones, or no recorded call matches.
+    model_params: dict[str, Any] = Field(default_factory=dict)
     created_at: UtcDatetime = Field(default_factory=utc_now)
 
     @model_validator(mode="after")
