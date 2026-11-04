@@ -160,6 +160,19 @@ class Gateway:
             budget=budget,
         )
 
+    def with_cache(self, cache: CompletionCache) -> Gateway:
+        """The same gateway (config, keys, transports, ledger, budget) over another
+        completion cache: an empty one forces every call to the provider (P5-T6)."""
+        return Gateway(
+            self.config,
+            cache=cache,
+            ledger=self.ledger,
+            budget=self.budget,
+            env=self._env,
+            transports=self._transports,
+            sleep=self._sleep,
+        )
+
     # ------------------------------------------------------------ resolution
 
     def resolve(self, role: str) -> RoleConfig:
