@@ -187,7 +187,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
   - *Done when:* schema-valid output on 20 sample spans per judge model.
 - [x] **P6-T2: Deterministic validators.** Schema, ranges, tool-error flags, retrieval relevance threshold, numeric claim-vs-source match.
   - *Done when:* catch all `F4` and most `F2` with no LLM call.
-- [ ] **P6-T3: Stage A — per-node anomaly scoring.** Fast judges over every node in topological order, combined with validators.
+- [x] **P6-T3: Stage A — per-node anomaly scoring.** Fast judges over every node in topological order, combined with validators.
   - *Done when:* every span gets an `AnomalyScore`; cost per run logged.
 - [ ] **P6-T4: Judge ensemble.** `judge_fast` + `judge_nvidia` + `judge_oss`; weighted vote; Cohen's κ; per-node disagreement.
   - *Done when:* output has per-judge verdicts, aggregate verdict, agreement score.
