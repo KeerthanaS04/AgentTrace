@@ -14,6 +14,8 @@
     agenttrace diff RUN_A RUN_B                   # each span: same / changed (how) / only in one
     agenttrace plan RUN policy --set decision='"deny"'   # replay plan for a patch: frozen /
                                                   # patched / re-run spans (P5-T2)
+    agenttrace replay RUN policy --set decision=deny     # execute that patch: re-run its
+                                                  # descendants, store the replay (P5-T3)
 
 The store is SQLite at .cache/agenttrace.db (override with --db or $AGENTTRACE_DB).
 """
@@ -29,7 +31,6 @@ from agenttrace import __version__
 # Subcommands that print a notice until their task lands.
 NOT_YET: dict[str, str] = {
     "diagnose": "P7-T4",
-    "replay": "P5-T3",
     "score": "P8-T7",
     "eval": "P9-T7",
     "serve": "P10-T1",
@@ -94,6 +95,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     plan.add_argument("--output", type=Path, help="JSON file: the full replacement output")
     plan.add_argument("--profile", default="default", help="model profile for the workflow")
+
+    rep = with_db(sub.add_parser("replay", help="replay a run with one span patched"))
+    rep.add_argument("run_id")
+    rep.add_argument("target", help="span to patch (local id, e.g. policy, router.llm#2)")
+    rep.add_argument(
+        "--set",
+        dest="fields",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="change one output field (VALUE is JSON, else a string); repeatable",
+    )
+    rep.add_argument("--output", type=Path, help="JSON file: the full replacement output")
+    rep.add_argument("--profile", help="model profile (default: inferred from the run)")
+    rep.add_argument("--no-store", action="store_true", help="do not save the replay")
 
     for name in NOT_YET:
         sub.add_parser(name)
@@ -365,6 +381,81 @@ def cmd_plan(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_replay(args: argparse.Namespace) -> int:
+    import json
+
+    from agenttrace.evaluation.outcome import check_outcome
+    from agenttrace.gateway.gateway import Gateway
+    from agenttrace.replay.check import infer_profile
+    from agenttrace.replay.executor import execute_plan
+    from agenttrace.replay.patcher import Patch, PatchError, patch_fields, plan_patch
+    from agenttrace.store import TraceStore
+    from agenttrace.workflow.agent_config import load_agents_config
+    from agenttrace.workflow.support import build_support_workflow, make_resources
+
+    gateway = Gateway.from_env()
+    agents = load_agents_config()
+    with TraceStore.open(args.db) as store:
+        if not store.has_run(args.run_id):
+            print(f"no stored run {args.run_id!r} (see `agenttrace runs`)")
+            return 2
+        run = store.get_run(args.run_id)
+        profile = args.profile or infer_profile(run, agents, gateway)
+        if profile is None:
+            print("cannot tell which model profile made this run; pass --profile")
+            return 2
+        workflow = build_support_workflow(agents.profile(profile).roles())
+        try:
+            if args.output:
+                output = json.loads(args.output.read_text(encoding="utf-8"))
+                patch = Patch(target=args.target, output=output)
+            else:
+                patch = patch_fields(run, args.target, dict(_field(f) for f in args.fields))
+            plan = plan_patch(run, workflow, patch)
+        except (PatchError, ValueError, OSError) as exc:
+            print(f"cannot replay: {exc}")
+            return 2
+        run_id = store.next_run_id(f"{run.run_id}-patch")
+        out = execute_plan(run, workflow, plan, make_resources(gateway), run_id=run_id)
+        gateway.close()
+        if not args.no_store:
+            store.save_run(out.replay)
+
+    al = out.alignment
+    changed = [p.local_id for p in al.pairs if p.status != "unchanged"]
+    print(f"replay {out.replay.run_id} of {run.run_id} (profile {profile})")
+    print(f"patched      : {plan.target_local} ({', '.join(plan.changed_keys) or 'no change'})")
+    print(f"re-run steps : {', '.join(plan.rerun_steps) or '-'}")
+    print(f"live calls   : {out.live_model_calls} model call(s) not served from the record")
+    print(f"spans        : {len(al.unchanged)} unchanged, {len(changed)} changed or new")
+    for local_id in changed:
+        p = al.pair(local_id)
+        what = f" ({', '.join(p.changes)})" if p.changes else ""
+        print(f"  {p.status:<9} {local_id}{what}")
+    problems = out.violations()
+    print(f"only the target and its descendants changed: {'yes' if not problems else 'NO'}")
+    for problem in problems:
+        print(f"  ! {problem}")
+    before, after = run.final_output, out.replay.final_output
+    print(f"decision     : {before.get('decision', '-')} -> {after.get('decision', '-')}")
+
+    expected = None
+    if run.scenario_id:
+        from agenttrace.scenarios.ground_truth import load_dataset
+
+        truth = {s.scenario_id: s for s in load_dataset()}.get(run.scenario_id)
+        expected = truth.ground_truth.expected_final if truth else None
+    if expected is not None:
+        then, now = check_outcome(expected, before), check_outcome(expected, after)
+        verdict = {True: "correct", False: "wrong"}
+        print(
+            f"final        : {verdict[then.correct]} -> {verdict[now.correct]}"
+            f"  (expected {expected.decision}{'; ' + now.reason() if not now.correct else ''})"
+        )
+    print("not stored (--no-store)" if args.no_store else f"stored, replay_of {run.run_id}")
+    return 0 if not problems else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command in NOT_YET:
@@ -379,6 +470,7 @@ def main(argv: list[str] | None = None) -> int:
         "graph": cmd_graph,
         "diff": cmd_diff,
         "plan": cmd_plan,
+        "replay": cmd_replay,
     }[args.command]
     return handler(args)
 

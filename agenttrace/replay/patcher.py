@@ -166,6 +166,8 @@ def plan_patch(run: Run, workflow: Workflow, patch: Patch) -> ReplayPlan:
             )
     elif not patch.output:
         raise PatchError(f"the replacement for {target.node_id!r} is empty")
+    elif target.kind == "llm" and not isinstance(patch.output.get("text"), str):
+        raise PatchError(f"a replacement for model call {target.node_id!r} needs a 'text'")
 
     reached = set(downstream_steps(workflow, top.node_id))
     if nested:

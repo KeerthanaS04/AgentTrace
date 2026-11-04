@@ -80,7 +80,7 @@ def _llm_rebuild(span: SpanBuilder, a: dict[str, Any]) -> CompletionResult:
     return CompletionResult(
         text=out["text"],
         role=a["role"],
-        provider=out["provider"],
+        provider=out.get("provider") or "replay",
         model=span.model or "",
         params=span.params,
         tokens_in=span.tokens_in,

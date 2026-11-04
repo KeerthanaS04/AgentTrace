@@ -169,7 +169,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
   - *Done when:* replaying an unmodified run gives zero diffs.
 - [x] **P5-T2: Patcher.** Target span + replacement → plan: freeze non-descendants, mark target `patched=True`, re-run descendants.
   - *Done when:* frozen/re-run sets are correct on hand-built graphs.
-- [ ] **P5-T3: Re-executor.** Topological execution; frozen nodes reuse outputs; replay stored linked to original.
+- [x] **P5-T3: Re-executor.** Topological execution; frozen nodes reuse outputs; replay stored linked to original.
   - *Done when:* patching a known-bad node changes only its descendants.
 - [ ] **P5-T4: Patch sources.** `oracle` (ground truth, upper bound), `model` (model-proposed), `rule` (deterministic fix). Tag `patch_source`.
   - *Done when:* each source works end to end on ≥1 fault type.

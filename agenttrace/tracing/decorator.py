@@ -54,13 +54,16 @@ def traced(
     runs, by node id, `replay_key(arguments)` = (model, params), and its input. On a hit
     the recorded span is reproduced and `rebuild(span, arguments)` is returned instead of
     calling the function; on a miss the call runs and is recorded. Nodes with `inject`
-    replay by default (its `from_json` rebuilds the result from the recorded output).
+    replay by default: its `from_json` rebuilds the result from the recorded output, which
+    with a custom `record` must be `to_json(result)` (true for tools and searches), and
+    without one is the default `{"result": ...}` wrapper.
     """
     if rebuild is None and inject is not None:
         from_json = inject[1]
+        wrapped = record is None
 
         def rebuild_from_output(span: SpanBuilder, arguments: Arguments) -> Any:
-            return from_json(span.output)
+            return from_json(span.output["result"] if wrapped else span.output)
 
         rebuild = rebuild_from_output
     key_of = replay_key or _no_model
@@ -86,6 +89,8 @@ def traced(
                 if replay is not None and rebuild_fn is not None:
                     model, params = key_of(dict(bound.arguments))
                     if replay.lookup_call(node_id, kind, model, params, span):
+                        if inject is not None and trace.faults is not None:
+                            trace.faults.skip(node_id)
                         replayed: R = rebuild_fn(span, arguments)
                         return replayed
                 result = fn(*args, **kwargs)
