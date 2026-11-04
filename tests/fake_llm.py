@@ -76,6 +76,7 @@ def make_gateway(
     seeded: Callable[[str, Any], dict[str, Any]] | None = None,
     bodies: list[dict[str, Any]] | None = None,
     status: Callable[[str, Any], int] | None = None,
+    by_model: Callable[[str, str], dict[str, Any]] | None = None,
 ) -> Gateway:
     """A real Gateway whose providers are replaced by the scripted server.
 
@@ -83,7 +84,9 @@ def make_gateway(
     `usage` is returned as each reply's token usage (default: none reported). `seeded`,
     if given, replaces `script` and also gets the request's `seed` (None if unset), for
     tests of repeated runs; `bodies` collects every raw request body. `status(prompt,
-    seed)` can answer with an HTTP error code instead (e.g. 429). Backoff never sleeps.
+    seed)` can answer with an HTTP error code instead (e.g. 429). `by_model(prompt,
+    model)` replaces `script` and sees which model was asked (judge ensembles). Backoff
+    never sleeps.
     """
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -98,7 +101,12 @@ def make_gateway(
             calls.append((agent_of(prompt), body["model"]))
         if status is not None and (code := status(prompt, body.get("seed"))) != 200:
             return httpx.Response(code, json={"status": code, "title": "fake error"})
-        answer = seeded(prompt, body.get("seed")) if seeded is not None else script(prompt)
+        if by_model is not None:
+            answer = by_model(prompt, body["model"])
+        elif seeded is not None:
+            answer = seeded(prompt, body.get("seed"))
+        else:
+            answer = script(prompt)
         content = json.dumps(answer)
         reply: dict[str, Any] = {"choices": [{"message": {"content": content}}]}
         if usage is not None:

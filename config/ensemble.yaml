@@ -1,0 +1,12 @@
+# Judge ensemble (P6-T4): how per-judge verdicts combine into one verdict per span.
+#
+# Weighted vote: each judge adds its weight to the verdict it gave; the verdict with the
+# most weight wins. Ties go to the more severe verdict (faulty > suspicious > ok), so a
+# split never hides a possible fault. Probabilities are the weighted mean of the judges'.
+# Judges that gave no valid reply on a span do not vote on it.
+#
+# Equal weights until judge accuracy is measured (Phase 9 can calibrate them).
+weights:
+  judge_fast: 1.0      # Muse Spark
+  judge_nvidia: 1.0    # Nemotron 3 Ultra (thinking off)
+  judge_oss: 1.0       # Qwen 2.5 72B Instruct (OpenRouter)

@@ -225,7 +225,7 @@ def test_judge_sample_command(
     out = capsys.readouterr().out
     assert "judge_fast (muse-spark-1.3): 10/10 schema-valid" in out
     assert "judge_nvidia (nvidia/nemotron-3-ultra-550b-a55b): 10/10 schema-valid" in out
-    assert "judge_oss: skipped" in out and "PASS" in out
+    assert "judge_oss (qwen/qwen-2.5-72b-instruct): 10/10 schema-valid" in out and "PASS" in out
     report = json.loads((tmp_path / "judge_sample.json").read_text("utf-8"))
     assert len(report["sample"]) == 10 and report["summary"]["judge_fast"]["valid"] == 10
     assert report["results"]["judge_fast"][0]["score"]["prompt_version"] == "node-judge-v1"
@@ -254,3 +254,37 @@ def test_a_partial_rerun_keeps_the_other_judges(
     other = [{"run_id": "r", "span": "writer"}]
     judge_sample.write_report({"sample": other, "summary": {"b": 4}, "skipped": {}, "results": {}})
     assert json.loads(path.read_text("utf-8"))["summary"] == {"b": 4}
+
+
+def test_judge_sample_reports_a_rejected_key_and_carries_on(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from agenttrace.store import TraceStore
+
+    monkeypatch.setenv("AGENTTRACE_DB", str(tmp_path / "s.db"))
+    with TraceStore.open() as store:
+        for i in range(3):
+            store.save_run(support_run(tmp_path / str(i), run_id=f"sc-00{i}-default-s1"))
+    monkeypatch.setattr(judge_sample, "REPORT_PATH", tmp_path / "judge_sample.json")
+    monkeypatch.setattr(judge_sample, "ROOT", tmp_path)
+    count = itertools.count()
+
+    def gw(*a: Any, **k: Any) -> Any:
+        g = make_gateway(tmp_path / f"g{next(count)}", script=judge_script)
+        original = g.complete
+
+        def complete(role: str, *args: Any, **kwargs: Any) -> Any:
+            if role == "judge_oss":
+                from agenttrace.gateway.types import ProviderRequestError
+
+                raise ProviderRequestError("openrouter: HTTP 401: User not found.", status_code=401)
+            return original(role, *args, **kwargs)
+
+        g.complete = complete  # type: ignore[method-assign]
+        return g
+
+    monkeypatch.setattr(Gateway, "from_env", classmethod(lambda cls, *a, **k: gw()))
+    assert judge_sample.main(["-n", "10", "--roles", "judge_fast", "judge_oss"]) == 0
+    out = capsys.readouterr().out
+    assert "judge_fast (muse-spark-1.3): 10/10 schema-valid" in out
+    assert "judge_oss: skipped (provider rejected the key" in out and "401" in out

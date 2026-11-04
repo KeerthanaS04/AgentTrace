@@ -33,7 +33,7 @@ from agenttrace.diagnosis.validators import ValidationContext, validate_run
 from agenttrace.gateway.gateway import Gateway
 from agenttrace.graph import build_graph, topological_order
 from agenttrace.judges.context import JUDGED_KINDS
-from agenttrace.judges.node_judge import judge_span
+from agenttrace.judges.node_judge import JudgeResult, judge_span
 from agenttrace.judges.registry import load_prompt
 from agenttrace.schemas.diagnosis import AnomalyScore, ValidatorFinding, Verdict
 from agenttrace.schemas.run import Run
@@ -51,6 +51,8 @@ class SpanScores:
     source: str  # input / failed / skipped / validators / judge / no answer / inherited
     scores: dict[str, AnomalyScore] = field(default_factory=dict)  # judge -> score
     findings: list[ValidatorFinding] = field(default_factory=list)
+    # Judges that gave no valid reply: their placeholder score is not a vote (P6-T4).
+    failed_roles: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -64,6 +66,10 @@ class StageAResult:
     cost_usd: float = 0.0
     tokens_in: int = 0
     tokens_out: int = 0
+    cost_by_role: dict[str, float] = field(default_factory=dict)
+    calls_by_role: dict[str, int] = field(default_factory=dict)
+    # Roles whose provider rejected the credentials: not called again in this run.
+    disabled_roles: dict[str, str] = field(default_factory=dict)
 
     def by_span(self) -> dict[str, SpanScores]:
         return {s.span_id: s for s in self.spans}
@@ -149,6 +155,7 @@ def score_run(
         ]
         return min(values, default=1.0)
 
+    disabled: dict[str, str] = {}  # role -> why (the provider rejected its key)
     llm_spans: list[Span] = []
     for span_id in order:
         span = by_id[span_id]
@@ -195,14 +202,25 @@ def score_run(
         elif span.kind in JUDGED_KINDS:
             entry.source = "judge"
             for role in roles:
-                res = judge_span(gateway, run, span.span_id, role=role, version=version)
+                if role in disabled:
+                    res = JudgeResult(
+                        span.span_id, role, "", prompt_version, None, 0, [disabled[role]]
+                    )
+                else:
+                    res = judge_span(gateway, run, span.span_id, role=role, version=version)
+                    if res.auth_error:
+                        disabled[role] = f"provider error: {res.provider_error}"
+                        result.disabled_roles[role] = disabled[role]
                 result.judge_calls += 1
                 result.model_calls += res.attempts
                 result.cost_usd += res.cost_usd
+                result.cost_by_role[role] = result.cost_by_role.get(role, 0.0) + res.cost_usd
+                result.calls_by_role[role] = result.calls_by_role.get(role, 0) + res.attempts
                 result.tokens_in += res.tokens_in
                 result.tokens_out += res.tokens_out
                 if res.score is None:
                     result.judge_failures += 1
+                    entry.failed_roles.append(role)
                     entry.source = "no answer" if len(roles) == 1 else entry.source
                     entry.scores[role] = AnomalyScore(
                         span_id=span.span_id,

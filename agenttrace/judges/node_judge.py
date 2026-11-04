@@ -21,7 +21,9 @@ from typing import Any
 
 from pydantic import Field, model_validator
 
+from agenttrace.gateway.budget import BudgetExceededError
 from agenttrace.gateway.gateway import Gateway
+from agenttrace.gateway.types import ProviderRequestError, ProviderUnavailableError
 from agenttrace.judges.context import JudgeContext, judge_context
 from agenttrace.judges.registry import load_prompt
 from agenttrace.schemas.base import NonEmptyStr, Probability
@@ -75,6 +77,10 @@ class JudgeResult:
     tokens_out: int = 0
     cost_usd: float = 0.0
     latency_s: float = 0.0
+    # The provider refused or failed the call (no reply to judge); `auth` if it rejected
+    # the credentials (401 / 403), which no retry or other span will fix.
+    provider_error: str | None = None
+    auth_error: bool = False
 
     @property
     def valid(self) -> bool:
@@ -132,6 +138,7 @@ def judge_span(
     ctx = judge_context(run, target)
     template, prompt_version = load_prompt("node_judge", version)
     prompt = render_prompt(ctx, template, today or load_db().as_of.isoformat())
+    full_id = f"{run.run_id}/{ctx.span_id}"
     token = _ALLOWED.set(frozenset(ctx.refs()))
     try:
         result = gateway.complete_structured(
@@ -140,9 +147,21 @@ def judge_span(
             JudgeReply,
             tag=f"judge/{role}/{ctx.span_id}",
         )
+    except (ProviderRequestError, ProviderUnavailableError, BudgetExceededError) as exc:
+        status = getattr(exc, "status_code", None)
+        return JudgeResult(
+            span_id=full_id,
+            role=role,
+            model="",
+            prompt_version=prompt_version,
+            score=None,
+            attempts=0,
+            errors=[f"provider error: {exc}"],
+            provider_error=str(exc),
+            auth_error=status in (401, 403) or isinstance(exc, ProviderUnavailableError),
+        )
     finally:
         _ALLOWED.reset(token)
-    full_id = f"{run.run_id}/{ctx.span_id}"
     calls = result.completions
     score = None
     if result.value is not None:
