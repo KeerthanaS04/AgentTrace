@@ -1,0 +1,32 @@
+# Escalation to Muse Wonder (Stage C, P6-T6): when a Stage B diagnosis is hard enough to
+# send to the deep model. A run escalates if ANY enabled rule fires; the reasons are
+# recorded on the Diagnosis (`escalation_reason`).
+rules:
+  # (a) The judges disagree: the run's mean pairwise Cohen's kappa is below this.
+  #     (P6-T4 pooled kappa for Spark + Nemotron was 0.32.)
+  low_agreement:
+    enabled: true
+    min_kappa: 0.4
+  # (b) The top two root candidates are too close to call: same evidence tier and their
+  #     confidences differ by less than this.
+  close_top_two:
+    enabled: true
+    max_gap: 0.15
+  # (c) More than this many root candidates (one is the normal case).
+  multiple_roots:
+    enabled: true
+    max_roots: 1
+  # (d) A propagated error's path from its root is longer than this many hops.
+  long_chain:
+    enabled: true
+    max_hops: 3
+  # (e) Validators and judges conflict: a validator ERROR on a span (or a call inside a
+  #     step) that the step's judges called ok.
+  validator_judge_conflict:
+    enabled: true
+
+# Spending limits for Wonder ($4 / $20 per M tokens): a batch stops escalating once
+# either is reached; the rest keep their Stage B diagnosis.
+budget:
+  max_escalations: 20
+  max_usd: 5.00
