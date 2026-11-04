@@ -80,8 +80,17 @@ def multirun(*args: str) -> int:
     return _run("uv", "run", "python", "-m", "agenttrace.scenarios.multirun", *args)
 
 
+def replay_check(*args: str) -> int:
+    return _run("uv", "run", "python", "-m", "agenttrace.replay.check", *args)
+
+
 # Tasks that forward extra command-line arguments (e.g. `clean --profile bolt`).
-WITH_ARGS: dict[str, Callable[..., int]] = {"clean": clean, "verify": verify, "multirun": multirun}
+WITH_ARGS: dict[str, Callable[..., int]] = {
+    "clean": clean,
+    "verify": verify,
+    "multirun": multirun,
+    "replay-check": replay_check,
+}
 
 TASKS: dict[str, Callable[..., int]] = {
     "setup": setup,

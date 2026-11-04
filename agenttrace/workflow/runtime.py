@@ -29,7 +29,7 @@ from agenttrace.schemas.base import NonEmptyStr, StrictModel, UtcDatetime, utc_n
 from agenttrace.schemas.run import Run
 from agenttrace.schemas.span import Explanation, Ref, Span
 from agenttrace.tracing import TraceContext
-from agenttrace.tracing.context import FaultHook, InjectionError
+from agenttrace.tracing.context import FaultHook, HarnessError, ReplayHook
 
 T = TypeVar("T")
 
@@ -152,6 +152,7 @@ class WorkflowResult(StrictModel):
             final_correct=final_correct,
             spans=self.spans,
             seed=self.model_params.get("seed"),
+            model_params=self.model_params,
         )
 
 
@@ -268,11 +269,14 @@ class Workflow:
         resources: Mapping[str, Any] | None = None,
         faults: FaultHook | None = None,
         model_params: Mapping[str, Any] | None = None,
+        replay: ReplayHook | None = None,
     ) -> WorkflowResult:
         """Run the workflow. `faults` (a `faults.FaultPlan`) injects faults as nodes
         produce their outputs; it is for building labelled scenarios (P4) only.
         `model_params` override every model call's params for this run (e.g. a seed); they
-        reach the gateway through each step's context and change its cache key."""
+        reach the gateway through each step's context and change its cache key.
+        `replay` (a `replay.ReplayCache`) serves recorded node outputs for unchanged
+        inputs and records the rest (P5)."""
         sampling = dict(model_params or {})
         missing, extra = set(self.inputs) - set(inputs), set(inputs) - set(self.inputs)
         if missing or extra:
@@ -286,7 +290,7 @@ class Workflow:
         # their refs from here via their declared sources, never by recomputing them.
         minted: dict[tuple[str, str], Ref] = {}
         _mint(minted, run_id, INPUT_STEP, values[INPUT_STEP])
-        with TraceContext(run_id, faults=faults) as trace:
+        with TraceContext(run_id, faults=faults, replay=replay) as trace:
             trace.instant("message", INPUT_STEP, agent=self.name, output=values[INPUT_STEP])
             for name in self.order:
                 step = self.steps[name]
@@ -372,8 +376,8 @@ class Workflow:
                 if got != want:
                     raise ValueError(f"output keys {sorted(got)} != declared {sorted(want)}")
                 output = _copy_json(result.output, "output")
-            except InjectionError:
-                raise  # a broken fault plan, not the agent failing
+            except HarnessError:
+                raise  # a broken fault plan or a strict replay miss, not the agent failing
             except Exception as exc:
                 span.error = f"{type(exc).__name__}: {exc}"
                 return StepRecord(
@@ -391,8 +395,12 @@ class Workflow:
                 output = trace.faults.apply(step.name, "agent", span.span_id, output)
                 if set(output) != set(step.agent.output_keys):
                     raise ValueError(f"fault changed {step.name!r} output keys: {sorted(output)}")
+            explanation: Explanation | None = result.explanation
+            if trace.replay is not None:
+                # After any fault, so a recorded faulty output is what gets replayed.
+                output, explanation = trace.replay.resolve_agent(trace, span, output, explanation)
             span.output = output
-            span.explanation = result.explanation
+            span.explanation = explanation
         values[step.name] = output
         _mint(minted, run_id, step.name, output)
         return StepRecord(
@@ -401,7 +409,7 @@ class Workflow:
             inputs=resolved,
             input_refs=refs,
             output=output,
-            explanation=result.explanation,
+            explanation=explanation,
             started_at=started,
             ended_at=utc_now(),
         )

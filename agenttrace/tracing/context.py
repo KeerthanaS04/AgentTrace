@@ -31,9 +31,18 @@ _active_trace: ContextVar[TraceContext | None] = ContextVar("agenttrace_trace", 
 _open_span: ContextVar[SpanBuilder | None] = ContextVar("agenttrace_span", default=None)
 
 
-class InjectionError(RuntimeError):
-    """A fault plan is misconfigured. The runtime re-raises it instead of recording it as
-    the agent failing, so a broken scenario can never pass for an agent failure."""
+class HarnessError(RuntimeError):
+    """A failure of the evaluation harness (fault plan, replay), not of the workflow. The
+    runtime re-raises it instead of recording it as the agent failing."""
+
+
+class InjectionError(HarnessError):
+    """A fault plan is misconfigured. Re-raised by the runtime, so a broken scenario can
+    never pass for an agent failure."""
+
+
+class ReplayMissError(HarnessError):
+    """A strict replay needed a node output the replay cache does not have."""
 
 
 class FaultHook(Protocol):
@@ -42,6 +51,40 @@ class FaultHook(Protocol):
     def apply(
         self, node_id: str, kind: SpanKind, span_id: str, value: dict[str, Any]
     ) -> dict[str, Any]: ...
+
+
+class ReplayHook(Protocol):
+    """Serves recorded node outputs during replay (implemented by replay.ReplayCache).
+
+    Calls (llm / tool / retrieval) are looked up before they execute; an agent is
+    resolved after its body ran, once its nested calls are known.
+    """
+
+    def lookup_call(
+        self,
+        node_id: str,
+        kind: SpanKind,
+        model: str | None,
+        params: Mapping[str, Any],
+        span: SpanBuilder,
+    ) -> bool: ...
+
+    def record_call(
+        self,
+        node_id: str,
+        kind: SpanKind,
+        model: str | None,
+        params: Mapping[str, Any],
+        span: SpanBuilder,
+    ) -> None: ...
+
+    def resolve_agent(
+        self,
+        trace: TraceContext,
+        span: SpanBuilder,
+        output: dict[str, Any],
+        explanation: Explanation | None,
+    ) -> tuple[dict[str, Any], Explanation | None]: ...
 
 
 def current_trace() -> TraceContext | None:
@@ -112,10 +155,18 @@ class SpanBuilder:
 class TraceContext:
     """Spans of one run. Use as `with TraceContext(run_id) as trace: ...`."""
 
-    def __init__(self, run_id: str, *, faults: FaultHook | None = None) -> None:
+    def __init__(
+        self,
+        run_id: str,
+        *,
+        faults: FaultHook | None = None,
+        replay: ReplayHook | None = None,
+    ) -> None:
         self.run_id = run_id
         # Fault injection for this run (P4); None in normal runs. Never recorded in spans.
         self.faults = faults
+        # Record/replay cache (P5); None in normal runs.
+        self.replay = replay
         self._slots: list[SpanBuilder] = []  # in the order spans were opened
         self._done: dict[str, Span] = {}
         self._count: dict[str, int] = {}
@@ -134,7 +185,12 @@ class TraceContext:
         return [self._done[s.span_id] for s in self._slots if s.span_id in self._done]
 
     def children(self, span_id: str) -> list[Span]:
-        return [s for s in self._done.values() if s.parent_span_id == span_id]
+        """Closed direct children, in the order they were opened."""
+        return [
+            self._done[s.span_id]
+            for s in self._slots
+            if s.parent_span_id == span_id and s.span_id in self._done
+        ]
 
     def _new_span_id(self, node_id: str) -> str:
         n = self._count[node_id] = self._count.get(node_id, 0) + 1

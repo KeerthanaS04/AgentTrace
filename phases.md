@@ -165,7 +165,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
 ## Phase 5: Record/Replay Engine (hardest — start early)
 **Goal:** reproducible re-execution with surgical interventions. · **Milestone:** M1
 
-- [ ] **P5-T1: Record/replay cache.** Keyed by `(node_id, model, params, hash(inputs))`.
+- [x] **P5-T1: Record/replay cache.** Keyed by `(node_id, model, params, hash(inputs))`.
   - *Done when:* replaying an unmodified run gives zero diffs.
 - [ ] **P5-T2: Patcher.** Target span + replacement → plan: freeze non-descendants, mark target `patched=True`, re-run descendants.
   - *Done when:* frozen/re-run sets are correct on hand-built graphs.
