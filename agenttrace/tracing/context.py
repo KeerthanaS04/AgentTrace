@@ -52,6 +52,10 @@ class FaultHook(Protocol):
         self, node_id: str, kind: SpanKind, span_id: str, value: dict[str, Any]
     ) -> dict[str, Any]: ...
 
+    def skip(self, node_id: str) -> None:
+        """A call of this node was served by a replay instead of executed: count it, so
+        occurrence-numbered faults still hit the same call as in the original run."""
+
 
 class ReplayHook(Protocol):
     """Serves recorded node outputs during replay (implemented by replay.ReplayCache).
@@ -127,6 +131,7 @@ class SpanBuilder:
     tokens_out: int = 0
     cost_usd: float = 0.0
     error: str | None = None
+    patched: bool = False  # output replaced by a counterfactual patch (P5)
 
     def build(self, run_id: str, ended_at: datetime) -> Span:
         return Span(
@@ -149,6 +154,7 @@ class SpanBuilder:
             tokens_out=self.tokens_out,
             cost_usd=self.cost_usd,
             error=self.error,
+            patched=self.patched,
         )
 
 

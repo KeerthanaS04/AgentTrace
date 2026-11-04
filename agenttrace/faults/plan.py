@@ -71,6 +71,10 @@ class FaultPlan:
             self.applied.append(AppliedFault(node_id, span_id, fault.injector, n))
         return value
 
+    def skip(self, node_id: str) -> None:
+        """Count a call of `node_id` that a replay served from its record (not re-run)."""
+        self._seen[node_id] = self._seen.get(node_id, 0) + 1
+
     def unapplied(self) -> list[FaultInjection]:
         hit = {(a.node_id, a.injector) for a in self.applied}
         return [f for f in self.faults if (f.target_node_id, f.injector) not in hit]
