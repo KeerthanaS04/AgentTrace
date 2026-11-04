@@ -270,9 +270,11 @@ def test_cli_replay(
     out = capsys.readouterr().out
     assert code == 0
     assert "only the target and its descendants changed: yes" in out
-    assert "decision     : approve -> deny" in out and "final        : correct -> wrong" in out
+    assert 'decision: "approve" -> "deny"' in out
+    assert "recovery     : correct -> wrong, score 1.00 -> 0.50" in out
     with TraceStore.open(db) as store:
         assert store.run_ids(replay_of=run.run_id) == [f"{run.run_id}-patch-r1"]
+        assert store.replays() == []  # a manual patch has no source: no replay record
 
 
 def test_patch_check_command(

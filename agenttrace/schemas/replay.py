@@ -17,11 +17,17 @@ class ReplayResult(StrictModel):
     patch: Patch
     patched_span_id: NonEmptyStr
     patch_source: PatchSource
+    # Local ids (e.g. "policy", "tool_agent.llm#2") of spans the replay patched, changed,
+    # added, or no longer has (replay.differ).
     changed_spans: list[str] = Field(default_factory=list)
     original_final: dict[str, Any] = Field(default_factory=dict)
     replay_final: dict[str, Any] = Field(default_factory=dict)
     recovered: bool
     recovery_score: Probability
+    # Scored against the clean run of the same seed (P5-T5): was recovery possible at all
+    # (the clean run was correct), and did the replay reach the clean run's outcome?
+    clean_correct: bool | None = None
+    matches_clean: bool | None = None
 
     @model_validator(mode="after")
     def _check_consistency(self) -> ReplayResult:

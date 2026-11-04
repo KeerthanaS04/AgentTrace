@@ -110,6 +110,13 @@ def build_parser() -> argparse.ArgumentParser:
     rep.add_argument("--output", type=Path, help="JSON file: the full replacement output")
     rep.add_argument("--profile", help="model profile (default: inferred from the run)")
     rep.add_argument("--no-store", action="store_true", help="do not save the replay")
+    rep.add_argument(
+        "--source",
+        choices=["oracle", "rule", "model"],
+        help="make the patch from a source instead of --set / --output (P5-T4)",
+    )
+    rep.add_argument("--role", default="patcher", help="model role for --source model")
+    rep.add_argument("--json", type=Path, help="also write the UI replay view (React Flow)")
 
     for name in NOT_YET:
         sub.add_parser(name)
@@ -384,11 +391,15 @@ def cmd_plan(args: argparse.Namespace) -> int:
 def cmd_replay(args: argparse.Namespace) -> int:
     import json
 
-    from agenttrace.evaluation.outcome import check_outcome
+    from agenttrace.evaluation.recovery import Recovery, replay_result, score_recovery
     from agenttrace.gateway.gateway import Gateway
     from agenttrace.replay.check import infer_profile
+    from agenttrace.replay.differ import diff_runs, to_ui_replay
     from agenttrace.replay.executor import execute_plan
     from agenttrace.replay.patcher import Patch, PatchError, patch_fields, plan_patch
+    from agenttrace.replay.sources import PatchSourceError, model_patch, rule_patch
+    from agenttrace.scenarios.ground_truth import load_dataset
+    from agenttrace.scenarios.oracle import clean_run, oracle_patch
     from agenttrace.store import TraceStore
     from agenttrace.workflow.agent_config import load_agents_config
     from agenttrace.workflow.support import build_support_workflow, make_resources
@@ -404,55 +415,106 @@ def cmd_replay(args: argparse.Namespace) -> int:
         if profile is None:
             print("cannot tell which model profile made this run; pass --profile")
             return 2
-        workflow = build_support_workflow(agents.profile(profile).roles())
+        roles = agents.profile(profile).roles()
+        workflow = build_support_workflow(roles)
+        scenario = {s.scenario_id: s for s in load_dataset()}.get(run.scenario_id or "")
         try:
-            if args.output:
+            patch: Patch | None
+            if args.source == "oracle":
+                if scenario is None:
+                    raise PatchError(f"run {run.run_id} is not a scenario run: no oracle")
+                patch = oracle_patch(gateway, scenario, run, args.target, roles)
+            elif args.source == "rule":
+                patch = rule_patch(run, args.target, make_resources(gateway))
+            elif args.source == "model":
+                patch = model_patch(run, args.target, gateway, role=args.role)
+            elif args.output:
                 output = json.loads(args.output.read_text(encoding="utf-8"))
                 patch = Patch(target=args.target, output=output)
             else:
                 patch = patch_fields(run, args.target, dict(_field(f) for f in args.fields))
+            if patch is None:
+                raise PatchError(f"no {args.source} patch for {args.target}")
             plan = plan_patch(run, workflow, patch)
-        except (PatchError, ValueError, OSError) as exc:
+        except (PatchError, PatchSourceError, ValueError, OSError) as exc:
             print(f"cannot replay: {exc}")
             return 2
         run_id = store.next_run_id(f"{run.run_id}-patch")
         out = execute_plan(run, workflow, plan, make_resources(gateway), run_id=run_id)
+        diff = diff_runs(run, out.replay)
+        rec: Recovery | None = None
+        if scenario is not None:
+            clean = clean_run(gateway, scenario, run, roles)
+            rec = score_recovery(
+                scenario.ground_truth.expected_final,
+                run.final_output,
+                out.replay.final_output,
+                clean.final_output,
+            )
         gateway.close()
+        record = rec is not None and plan.patch_source is not None
         if not args.no_store:
             store.save_run(out.replay)
+            if record and rec is not None:
+                store.add_replay(replay_result(out, diff, rec))
 
-    al = out.alignment
-    changed = [p.local_id for p in al.pairs if p.status != "unchanged"]
-    print(f"replay {out.replay.run_id} of {run.run_id} (profile {profile})")
+    counts = diff.counts()
+    source = plan.patch_source or "manual"
+    print(f"replay {out.replay.run_id} of {run.run_id} (profile {profile}, source {source})")
     print(f"patched      : {plan.target_local} ({', '.join(plan.changed_keys) or 'no change'})")
+    if plan.note:
+        print(f"patch note   : {plan.note}")
     print(f"re-run steps : {', '.join(plan.rerun_steps) or '-'}")
     print(f"live calls   : {out.live_model_calls} model call(s) not served from the record")
-    print(f"spans        : {len(al.unchanged)} unchanged, {len(changed)} changed or new")
-    for local_id in changed:
-        p = al.pair(local_id)
-        what = f" ({', '.join(p.changes)})" if p.changes else ""
-        print(f"  {p.status:<9} {local_id}{what}")
+    print(
+        f"spans        : {counts['unchanged']} unchanged, {counts['patched']} patched, "
+        f"{counts['changed']} changed, {counts['new']} new, {counts['missing']} missing"
+    )
+    for span in diff.spans:
+        if span.status != "unchanged":
+            what = f" ({', '.join(span.changes)})" if span.changes else ""
+            print(f"  {span.status:<9} {span.local_id}{what}")
     problems = out.violations()
     print(f"only the target and its descendants changed: {'yes' if not problems else 'NO'}")
     for problem in problems:
         print(f"  ! {problem}")
-    before, after = run.final_output, out.replay.final_output
-    print(f"decision     : {before.get('decision', '-')} -> {after.get('decision', '-')}")
-
-    expected = None
-    if run.scenario_id:
-        from agenttrace.scenarios.ground_truth import load_dataset
-
-        truth = {s.scenario_id: s for s in load_dataset()}.get(run.scenario_id)
-        expected = truth.ground_truth.expected_final if truth else None
-    if expected is not None:
-        then, now = check_outcome(expected, before), check_outcome(expected, after)
+    print("final output :" + (" unchanged" if diff.final_identical else ""))
+    for change in diff.final_changes:
+        before, after = json.dumps(change.before), json.dumps(change.after)
+        if len(before) + len(after) > 120:
+            before, after = before[:50] + "...", after[:50] + "..."
+        print(f"  {change.key}: {before} -> {after}")
+    if rec is not None and scenario is not None:
+        expected = scenario.ground_truth.expected_final
         verdict = {True: "correct", False: "wrong"}
         print(
-            f"final        : {verdict[then.correct]} -> {verdict[now.correct]}"
-            f"  (expected {expected.decision}{'; ' + now.reason() if not now.correct else ''})"
+            f"recovery     : {verdict[rec.before_correct]} -> {verdict[rec.recovered]}, "
+            f"score {rec.before_score:.2f} -> {rec.recovery_score:.2f} "
+            f"(expected {expected.decision}"
+            + (f"; reply lacks {rec.facts_missing}" if rec.facts_missing else "")
+            + ")"
         )
-    print("not stored (--no-store)" if args.no_store else f"stored, replay_of {run.run_id}")
+        clean_note = "correct" if rec.clean_correct else "wrong (nothing to recover to)"
+        same = "yes" if rec.matches_clean else "no"
+        print(f"clean run    : {clean_note}; replay matches it: {same}")
+    if args.json:
+        grade = None
+        if rec is not None:
+            grade = {
+                "recovered": rec.recovered,
+                "recovery_score": rec.recovery_score,
+                "before_score": rec.before_score,
+                "clean_correct": rec.clean_correct,
+            }
+        doc = to_ui_replay(out.replay, diff, grade)
+        args.json.parent.mkdir(parents=True, exist_ok=True)
+        args.json.write_text(doc.model_dump_json(indent=1), encoding="utf-8")
+        print(f"UI replay JSON: {len(doc.nodes)} nodes -> {args.json}")
+    if args.no_store:
+        print("not stored (--no-store)")
+    else:
+        what = " + replay record" if record else ""
+        print(f"stored{what}, replay_of {run.run_id}")
     return 0 if not problems else 1
 
 

@@ -35,14 +35,16 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from agenttrace.evaluation.outcome import check_outcome
+from agenttrace.evaluation.recovery import replay_result, score_recovery
 from agenttrace.faults import FaultPlan
 from agenttrace.gateway.gateway import Gateway
+from agenttrace.replay.differ import diff_runs
 from agenttrace.replay.executor import execute_plan
 from agenttrace.replay.patcher import Patch, PatchError, plan_patch
 from agenttrace.replay.sources import PATCHER_ROLE, PatchSourceError, model_patch, rule_patch
 from agenttrace.scenarios.ground_truth import Scenario, load_dataset
-from agenttrace.scenarios.oracle import oracle_patch
+from agenttrace.scenarios.oracle import clean_run, oracle_patch
+from agenttrace.schemas.replay import ReplayResult
 from agenttrace.schemas.run import PatchSource, Run
 from agenttrace.workflow.agent_config import DEFAULT_PROFILE, load_agents_config
 from agenttrace.workflow.support import build_support_workflow, make_resources
@@ -63,6 +65,10 @@ class PatchCheck:
     note: str = ""  # how the source made the patch
     detail: str = ""
     recovered: bool | None = None
+    score: float | None = None  # recovery_score after the patch
+    before_score: float | None = None
+    clean_correct: bool | None = None  # recovery was possible (the seed's clean run is right)
+    matches_clean: bool | None = None
     changed: int = 0
     live_calls: int = 0
 
@@ -113,25 +119,25 @@ def check_root(
     roles: dict[str, str],
     source: PatchSource = "oracle",
     role: str = PATCHER_ROLE,
-) -> tuple[PatchCheck, Run | None]:
+) -> tuple[PatchCheck, Run | None, ReplayResult | None]:
     truth = scenario.ground_truth
     pc = PatchCheck(scenario.scenario_id, truth.fault_code, seed, root, source)
     target = target_for(faulty, root)
     if target is None:
         pc.verdict, pc.detail = "skipped", f"{root} never ran in the faulty run"
-        return pc, None
+        return pc, None, None
     pc.target = target
     workflow = build_support_workflow(roles)
     try:
         patch = make_patch(source, gateway, scenario, faulty, target, roles, role)
         if patch is None:
             pc.verdict, pc.detail = "n/a", f"no {source} patch for {target}"
-            return pc, None
+            return pc, None, None
         pc.note = patch.note
         plan = plan_patch(faulty, workflow, patch)
     except (PatchError, PatchSourceError) as exc:
         pc.verdict, pc.detail = "n/a", f"{source} patch failed: {exc}"
-        return pc, None
+        return pc, None, None
     others = FaultPlan([f for f in scenario.faults if f.target_node_id != root])
     out = execute_plan(
         faulty,
@@ -146,10 +152,16 @@ def check_root(
         problems.append(f"replay tagged {out.replay.patch_source!r}, not {source!r}")
     pc.verdict = "VIOLATION" if problems else "descendants-only"
     pc.detail = "; ".join(problems)
-    pc.recovered = check_outcome(truth.expected_final, out.replay.final_output).correct
-    pc.changed = sum(p.status != "unchanged" for p in out.alignment.pairs)
+    diff = diff_runs(faulty, out.replay)
+    clean = clean_run(gateway, scenario, faulty, roles)
+    rec = score_recovery(
+        truth.expected_final, faulty.final_output, out.replay.final_output, clean.final_output
+    )
+    pc.recovered, pc.score, pc.before_score = rec.recovered, rec.recovery_score, rec.before_score
+    pc.clean_correct, pc.matches_clean = rec.clean_correct, rec.matches_clean
+    pc.changed = len(diff.changed_spans)
     pc.live_calls = out.live_model_calls
-    return pc, out.replay
+    return pc, out.replay, replay_result(out, diff, rec)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -197,12 +209,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 continue
             faulty = store.get_run(run_id)
             for root in scenarios[sid].ground_truth.root_cause_node_ids:
-                pc, replay = check_root(
+                pc, replay, result = check_root(
                     gateway, scenarios[sid], seed, faulty, root, roles, source, args.role
                 )
                 rows.append(pc)
-                if args.store and replay is not None:
+                if args.store and replay is not None and result is not None:
                     store.save_run(replay, replace=True)
+                    store.add_replay(result)
                 if args.verbose or pc.verdict == "VIOLATION":
                     rec = {True: "recovered", False: "not recovered", None: "-"}[pc.recovered]
                     print(
@@ -243,6 +256,30 @@ def main(argv: Sequence[str] | None = None) -> int:
             f"  {code:<5} {len(group):>8} {n_na:>5} {len(done):>9} {good:>17} "
             f"{n_rec:>14}/{len(done)}"
         )
+
+    # Recovery (P5-T5), scored against the clean run of the same seed: a patch can only
+    # recover what the workflow gets right without the fault.
+    print(f"\nrecovery ({source}; recoverable = the seed's clean run is correct):")
+    print(
+        f"  {'code':<5} {'recovered':>10} {'recoverable':>12} {'rec./recoverable':>17} "
+        f"{'matches clean':>14} {'score before -> after':>22}"
+    )
+    for code in sorted({r.fault_code for r in judged}):
+        done = [r for r in judged if r.fault_code == code]
+        able = [r for r in done if r.clean_correct]
+        rec_able = sum(bool(r.recovered) for r in able)
+        same = sum(bool(r.matches_clean) for r in done)
+        before = sum(r.before_score or 0 for r in done) / len(done)
+        after = sum(r.score or 0 for r in done) / len(done)
+        print(
+            f"  {code:<5} {sum(bool(r.recovered) for r in done):>10} {len(able):>12} "
+            f"{rec_able:>11}/{len(able):<5} {same:>9}/{len(done):<4} "
+            f"{before:>12.2f} -> {after:.2f}"
+        )
+    able_all = [r for r in judged if r.clean_correct]
+    if able_all:
+        rate = sum(bool(r.recovered) for r in able_all) / len(able_all)
+        print(f"  all   recovered {rate:.1%} of recoverable replays ({len(able_all)})")
     live = sum(r.live_calls for r in judged)
     print(f"model calls not served from the record: {live} (gateway cache or live)")
     print(f"{source} patches recovered the final outcome on: {', '.join(fixed) or 'none'}")
