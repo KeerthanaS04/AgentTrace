@@ -193,7 +193,7 @@ Phases are numbered by component, **not** by build order. Build in this order:
   - *Done when:* output has per-judge verdicts, aggregate verdict, agreement score.
 - [x] **P6-T5: Stage B — causal attribution.** Root cause = bad output + trustworthy inputs (or unexplained anomalous parents). Propagated = bad output + anomalous parent that explains it (with path). Rank by topo order, confidence, descendant count.
   - *Done when:* correct on 10 hand-checked scenarios; every propagated node has a valid path.
-- [ ] **P6-T6: Stage C — escalation to Muse Wonder.** Rules in `config/escalation.yaml`: low agreement, close top-2, multiple roots, long chain, validator/judge conflict.
+- [x] **P6-T6: Stage C — escalation to Muse Wonder.** Rules in `config/escalation.yaml`: low agreement, close top-2, multiple roots, long chain, validator/judge conflict.
   - *Done when:* triggers correctly in tests; cost tracked separately.
 - [ ] **P6-T7: Stage D — fix proposal.** Structured `Fix` with a machine-applicable patch per fault type.
   - *Done when:* every root cause has an applicable `Fix`.

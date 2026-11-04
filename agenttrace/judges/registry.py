@@ -17,7 +17,7 @@ from pathlib import Path
 
 PROMPT_DIR = Path(__file__).resolve().parent / "prompts"
 VERSIONS_PATH = PROMPT_DIR / "VERSIONS.json"
-CURRENT: dict[str, str] = {"node_judge": "v1"}
+CURRENT: dict[str, str] = {"node_judge": "v1", "escalation": "v1"}
 
 
 def prompt_id(name: str, version: str) -> str:
